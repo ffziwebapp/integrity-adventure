@@ -1,6 +1,6 @@
 // Dunia game di layar panggung: tiap peserta punya karakter yang bergerak ke area pilihannya.
 // Kanvas logis 1600 x 900 yang diskalakan mengikuti ukuran jendela.
-import { HURUF, BENTUK, STAGE, esc, daftar, karakterSVG, warnaKe } from './umum.js';
+import { HURUF, BENTUK, STAGE, esc, daftar, karakterSVG, gayaWarna } from './umum.js';
 
 const L = 1600, T = 900;
 const KULIT = { 1: 'jungkat', 2: 'kartu', 3: 'timbang', 4: 'gerbang', 5: 'pulau' };
@@ -27,7 +27,7 @@ export class Dunia {
     addEventListener('resize', skala); skala();
   }
 
-  tampil(ya) { this.wadah.style.display = ya ? '' : 'none'; }
+  tampil(ya) { this.wadah.style.display = ya ? '' : 'none'; this.wadah.classList.toggle('tertutup', !ya); }
 
   /** Dipanggil tiap ada perubahan data. info = HTML cip hasil (saat jawaban dibuka). */
   atur(pub, peserta, gerak, info) {
@@ -59,7 +59,7 @@ export class Dunia {
     this.q('.d-zona').innerHTML = (jungkat ? '<div class="papan"></div><div class="poros"></div>' : '')
       + (this.kulit === 'timbang' ? '<div class="palang"></div>' : '')
       + (this.kulit === 'pulau' ? '<div class="daratan"></div>' : '')
-      + this.zona.map((z, i) => `<div class="zona" data-i="${i}" style="left:${z.x}px;width:${z.w}px;--k:var(--${warna(i)})">
+      + this.zona.map((z, i) => `<div class="zona w-${warna(i)}" data-i="${i}" style="left:${z.x}px;width:${z.w}px">
           <div class="papan-nama"><span class="tanda">${tanda(i)}</span><span>${esc(opsi[i])}</span><b class="jml"></b></div><div class="lantai"></div></div>`).join('');
     const d = this.q('.daratan'); if (d) d.style.transform = `scale(${Math.max(0.74, 1 - (p.ronde || 1) * 0.03)})`;
   }
@@ -143,7 +143,7 @@ export class Dunia {
       if (!o) {
         const el = document.createElement('div'); el.className = 'k';
         el.innerHTML = `<div class="badan">${karakterSVG(d.avatar || 0)}</div><b class="cap"></b><span class="nm">${esc(d.nama)}</span>`;
-        el.style.setProperty('--w', warnaKe(d.warna)); el.style.setProperty('--d', `-${(Math.random() * 4).toFixed(2)}s`);
+        el.style.cssText = gayaWarna(d.warna);
         o = null; el.dataset.lambai = Math.random() < 0.3 ? '1' : '';
         wadah.appendChild(el); o = { el, x: null, y: null }; this.orang.set(u, o);
       }
@@ -162,7 +162,8 @@ export class Dunia {
       const ekspresi = sel ? 'e-tangis' : jenis === 'benar' || jenis === 'bonus' ? 'e-senang sorak'
         : jenis === 'sp1' || jenis === 'sp2' ? 'e-kaget' : jenis === 'penjara' || jenis === 'lambat' ? 'e-tangis'
         : salahTempat ? 'e-sedih' : (zi === -1 && o.el.dataset.lambai ? 'lambai' : '');
-      o.el.className = ['k', o.el.classList.contains('jalan') ? 'jalan' : '', sel ? 'tahanan' : '', adaNama && !sel ? 'bernama' : '',
+      const tetap = ['jalan', 'kedip', 'ayun'].filter((c) => o.el.classList.contains(c)).join(' ');
+      o.el.className = ['k', tetap, sel ? 'tahanan' : '', adaNama && !sel ? 'bernama' : '',
         salahTempat ? 'ambles' : '', jenis === 'bonus' ? 'bonus' : '', ekspresi].join(' ');
       const cap = o.el.querySelector('.cap');
       const teks = sel || p.stage === 5 ? '' : d.status === 'sp1' ? 'SP 1' : d.status === 'sp2' ? 'SP 2' : '';

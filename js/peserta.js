@@ -1,9 +1,10 @@
 // Halaman peserta (HP).
 import { siapkan, TS, UJI } from './toko.js';
-import { JUMLAH_AVATAR, WARNA, HURUF, BENTUK, STAGE, LABEL_STATUS, esc, daftar, avatarHTML, hitungMundur, bunyi, pasangIkon } from './umum.js';
+import { JUMLAH_AVATAR, WARNA, HURUF, BENTUK, STAGE, LABEL_STATUS, esc, daftar, avatarHTML, gayaWarna, hitungMundur, bunyi, pasangIkon, hidupkanKarakter } from './umum.js';
 
 const akar = document.getElementById('akar');
 pasangIkon();
+hidupkanKarakter();
 const q = new URLSearchParams(location.search);
 let toko, uid, kode = (q.get('r') || localStorage.getItem('ia-kode') || '').toUpperCase();
 let pub, saya, lepas = [], kunciLama = '', stopJam = null, dikeluarkan = false, pernahAda = false;
@@ -76,7 +77,7 @@ function vMasuk() {
 }
 
 function vLobi() {
-  return `${bilah()}<div class="tengah">${avatarHTML(saya, 'super lambai')}
+  return `${bilah()}<div class="tengah"><div class="di-alas">${avatarHTML(saya, 'super lambai')}<div class="tatakan"></div></div>
     <h1 class="judul">${esc(saya.nama)}</h1>
     <p class="ket">${pub.jumlahPemain || 1} pemain sudah masuk</p>
     <div class="kartu aturan"><span>❤️ Kamu punya 3 nyawa</span><span>📄 Salah 1× = SP 1, salah 2× = SP 2</span><span>🚔 Salah 3× = masuk penjara</span><span>🔥 5 benar beruntun = +1 nyawa</span><span>⚔️ Stage terakhir: satu salah langsung penjara</span></div>
@@ -97,7 +98,7 @@ function tombolOpsi(soal, terpilih) {
   const pintu = soal.tipe === 'benar_salah';
   const pendek = !pintu && daftar(soal.opsi).every((o) => o.length <= 16);
   return `<div class="opsi ${pintu ? 'pintu' : ''} ${pendek ? 'kisi' : ''} ${terpilih ? 'kunci-sudah' : ''}">${daftar(soal.opsi).map((o, i) =>
-    `<button data-p="${HURUF[i]}" style="--k:var(--${HURUF[i]})" class="${terpilih === HURUF[i] ? 'pilih' : ''}" ${terpilih ? 'disabled' : ''}>
+    `<button data-p="${HURUF[i]}" class="${terpilih === HURUF[i] ? 'pilih' : ''}" ${terpilih ? 'disabled' : ''}>
       <span class="tanda">${pintu ? (i === 0 ? '✔' : '✖') : BENTUK[i]}</span><span>${esc(o)}</span></button>`).join('')}</div>`;
 }
 
@@ -146,7 +147,7 @@ function vRekap() {
 function vAkhir() {
   const juara = saya?.status === 'juara';
   const pd = daftar(pub.podium);
-  return `${bilah()}<div class="tengah">${juara ? `<div style="font-size:70px">👑</div>${avatarHTML(saya, 'super e-senang lompat')}<p class="vonis">KAMU JUARANYA!</p>`
+  return `${bilah()}<div class="tengah">${juara ? `<div style="font-size:70px">👑</div><div class="di-alas">${avatarHTML(saya, 'super e-senang')}<div class="tatakan"></div></div><p class="vonis">KAMU JUARANYA!</p>`
     : `<p class="vonis">Selesai!</p><p class="ket">Pemenang utama:</p>${pd[0] ? `${avatarHTML(pd[0], 'besar')}<h1 class="judul">${esc(pd[0].nama)}</h1>` : ''}`}
     ${saya ? `<div class="kartu aturan"><span>Jawaban benar: ${saya.benar} · Poin: ${saya.poin || 0}</span></div>` : ''}
     <p class="ket">Terima kasih sudah ikut bermain 🙌</p></div>`;
@@ -163,7 +164,7 @@ function ikat(t) {
     akar.querySelectorAll('[data-av]').forEach((b) => { b.onclick = () => { form.avatar = +b.dataset.av; akar.querySelectorAll('[data-av]').forEach((x) => { x.classList.toggle('pilih', x === b); x.setAttribute('aria-pressed', x === b); }); }; });
     akar.querySelectorAll('[data-w]').forEach((b) => { b.onclick = () => {
       form.warna = +b.dataset.w; akar.querySelectorAll('[data-w]').forEach((x) => x.classList.toggle('pilih', x === b));
-      akar.querySelectorAll('[data-av] .av').forEach((a) => a.style.setProperty('--w', WARNA[form.warna]));
+      akar.querySelectorAll('[data-av] .av').forEach((a) => { a.style.cssText = gayaWarna(form.warna); });
     }; });
     akar.querySelector('#masuk').onclick = async (e) => {
       const n = form.nama.trim().replace(/\s+/g, '').slice(0, 5);

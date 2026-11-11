@@ -1,6 +1,9 @@
 // Hal-hal yang dipakai bersama oleh halaman peserta, panggung, dan pemandu.
 export const JUMLAH_AVATAR = 16;
-export const WARNA = ['#FF5D8F', '#33B8FF', '#FFB703', '#2FD08A', '#8B5CF6', '#FF9F1C', '#FF4D5E', '#14B8A6'];
+export const WARNA = ['#FF3D9A', '#2AA8FF', '#FFA51A', '#3FCF5E', '#8B5CF6', '#FF7A1A', '#FF4D5E', '#14B8A6'];
+// Warna lengan dan kaki (lebih gelap) dihitung sekali di sini, bukan dengan filter CSS yang mahal.
+const LENGAN = ['#CD3286', '#2685D5', '#CD8322', '#37A457', '#724ACE', '#CD6222', '#CD3E57', '#159290'];
+const KAKI = ['#A32976', '#2469B3', '#A36729', '#308152', '#5E3CAD', '#A34E29', '#A33352', '#16737D'];
 export const HURUF = ['a', 'b', 'c', 'd'];
 export const BENTUK = ['●', '▲', '■', '◆'];
 
@@ -18,8 +21,8 @@ export const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&a
 export const daftar = (v) => (v == null ? [] : Array.isArray(v) ? v : Object.values(v));
 
 // Karakter gambar sendiri (SVG) supaya tampil sama di semua perangkat.
-// 16 wajah = 4 bentuk mata x 4 bentuk mulut.
-const TINTA = '#26124D';
+// 16 wajah = 4 bentuk mata x 4 bentuk mulut. Semi-3D tanpa garis tepi: gradien kilap, sisi gelap, bayangan lantai.
+const TINTA = '#1D1458';
 const MATA = [
   `<circle cx="22" cy="30" r="3.6"/><circle cx="38" cy="30" r="3.6"/>`,
   `<path d="M17 31q5-7 10 0M33 31q5-7 10 0" fill="none" stroke="${TINTA}" stroke-width="3.2" stroke-linecap="round"/>`,
@@ -32,16 +35,29 @@ const MULUT = [
   `<path d="M24 43h12" fill="none" stroke="${TINTA}" stroke-width="3.2" stroke-linecap="round"/>`,
   `<path d="M21 40h18q-1 10-9 10t-9-10z"/><path d="M24 41h12v3H24z" fill="#fff"/>`,
 ];
-const G2 = `fill="none" stroke="${TINTA}" stroke-width="4.6" stroke-linecap="round"`;
+const G2 = `fill="none" stroke="var(--w2,#999)" stroke-width="6.5" stroke-linecap="round"`;
+
+// Gradien kilap dipasang sekali untuk seluruh halaman, lalu dirujuk oleh semua karakter.
+if (typeof document !== 'undefined' && !document.getElementById('ia-kilap')) {
+  const defs = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  defs.setAttribute('aria-hidden', 'true'); defs.setAttribute('width', '0'); defs.setAttribute('height', '0');
+  defs.style.cssText = 'position:absolute;width:0;height:0;overflow:hidden';
+  defs.innerHTML = '<defs><radialGradient id="ia-kilap" cx="34%" cy="24%" r="80%"><stop offset="0" stop-color="#fff" stop-opacity=".55"/>'
+    + '<stop offset=".45" stop-color="#fff" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".3"/></radialGradient></defs>';
+  (document.body || document.documentElement).prepend(defs);
+}
+
 /** Karakter berlengan dengan beberapa ekspresi. Ekspresi dipilih lewat kelas CSS pada pembungkusnya:
- *  e-senang, e-sedih, e-kaget, e-tangis; kelas "lambai" membuat tangan kanan melambai. */
+ *  e-senang, e-sedih, e-kaget, e-tangis; kelas "lambai" menandai karakter yang sesekali melambai
+ *  (digerakkan oleh hidupkanKarakter, bukan animasi CSS terus-menerus). */
 export function karakterSVG(avatar = 0) {
   const a = ((avatar % JUMLAH_AVATAR) + JUMLAH_AVATAR) % JUMLAH_AVATAR;
   return `<svg viewBox="0 0 60 72" aria-hidden="true" focusable="false">`
-    + `<g class="tg tg-kiri"><path d="M6 36q-11 5-10 17" ${G2}/></g><g class="tg tg-kanan"><path d="M54 36q11 5 10 17" ${G2}/></g>`
-    + `<rect x="13" y="62" width="13" height="8" rx="4" fill="${TINTA}"/><rect x="34" y="62" width="13" height="8" rx="4" fill="${TINTA}"/>`
-    + `<rect x="4" y="2" width="52" height="64" rx="26" fill="var(--w,#ccc)" stroke="${TINTA}" stroke-width="2.4"/><path d="M5.200 44v-3q24.800 11 49.600 0v3a24.800 21 0 0 1-49.600 0z" fill="#000" opacity=".13"/>`
-    + `<ellipse cx="20" cy="15" rx="9" ry="5" fill="#fff" opacity=".45" transform="rotate(-24 20 15)"/>`
+    + `<ellipse cx="30" cy="69.5" rx="20" ry="3" fill="#12063c" opacity=".28"/>`
+    + `<g class="tg tg-kiri"><path d="M7 37q-10 5-9 16" ${G2}/></g><g class="tg tg-kanan"><path d="M53 37q10 5 9 16" ${G2}/></g>`
+    + `<rect x="13" y="60" width="14" height="9" rx="4.5" fill="var(--w3,#777)"/><rect x="33" y="60" width="14" height="9" rx="4.5" fill="var(--w3,#777)"/>`
+    + `<rect x="4" y="2" width="52" height="63" rx="26" fill="var(--w,#ccc)"/><rect x="4" y="2" width="52" height="63" rx="26" fill="url(#ia-kilap)"/>`
+    + `<ellipse cx="20" cy="14" rx="8" ry="4.2" fill="#fff" opacity=".7" transform="rotate(-24 20 14)"/>`
     + `<g class="mata" fill="${TINTA}">${MATA[a % 4]}</g>`
     + `<g class="mt mt-biasa" fill="${TINTA}">${MULUT[Math.floor(a / 4) % 4]}</g>`
     + `<g class="mt mt-senang" fill="${TINTA}"><path d="M19 39h22q-1 12-11 12T19 39z"/><path d="M23 40h14v3H23z" fill="#fff"/></g>`
@@ -50,10 +66,41 @@ export function karakterSVG(avatar = 0) {
     + `<g class="alis"><path d="M15 25l9-4M45 25l-9-4" fill="none" stroke="${TINTA}" stroke-width="2.800" stroke-linecap="round"/></g>`
     + `<g class="air" fill="#4cc9f0" stroke="${TINTA}" stroke-width="1"><path d="M19 36q-4 6 0 8q4-2 0-8z"/><path d="M41 36q-4 6 0 8q4-2 0-8z"/></g></svg>`;
 }
-export const warnaKe = (i) => WARNA[(((i || 0) % WARNA.length) + WARNA.length) % WARNA.length];
+const nomorWarna = (i) => (((i || 0) % WARNA.length) + WARNA.length) % WARNA.length;
+export const warnaKe = (i) => WARNA[nomorWarna(i)];
+/** Variabel CSS warna karakter (badan, lengan, kaki). */
+export const gayaWarna = (i) => { const n = nomorWarna(i); return `--w:${WARNA[n]};--w2:${LENGAN[n]};--w3:${KAKI[n]}`; };
 export function avatarHTML(p, kelas = '') {
-  const tunda = (((p.avatar || 0) * 7 + (p.warna || 0) * 3) % 23) / 6;
-  return `<span class="av ${kelas}" style="--w:${warnaKe(p.warna)};--d:-${tunda.toFixed(2)}s">${karakterSVG(p.avatar || 0)}</span>`;
+  return `<span class="av ${kelas}" style="${gayaWarna(p.warna)}">${karakterSVG(p.avatar || 0)}</span>`;
+}
+
+/**
+ * Menghidupkan karakter dengan biaya kecil: satu pewaktu memilih beberapa karakter secara acak untuk berkedip,
+ * dan sesekali membuat karakter bertanda "lambai" melambaikan tangan. Tidak ada animasi CSS yang berjalan
+ * terus-menerus pada puluhan karakter, jadi panggung tetap ringan walau berisi 70 orang.
+ * Karakter di dalam elemen ber-kelas "tertutup" (tidak terlihat) dilewati.
+ */
+export function hidupkanKarakter(akar = document.body) {
+  if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  const acak = (arr) => arr[Math.floor(Math.random() * arr.length)];
+  let ayun = 0;
+  setInterval(() => {
+    if (document.hidden) return;
+    const semua = [...akar.querySelectorAll('.av, .k')].filter((e) => !e.closest('.tertutup'));
+    if (!semua.length) return;
+    // Rata-rata tiap karakter berkedip sekali per ±3,5 detik.
+    const nKedip = Math.min(semua.length, Math.floor(semua.length / 23 + Math.random()));
+    for (let i = 0; i < nKedip; i++) {
+      const e = acak(semua); if (e.classList.contains('kedip')) continue;
+      e.classList.add('kedip'); setTimeout(() => e.classList.remove('kedip'), 160);
+    }
+    // Lambaian: paling banyak sekitar seperdelapan dari yang boleh melambai, bergiliran.
+    const boleh = semua.filter((e) => e.classList.contains('lambai') && !e.classList.contains('ayun'));
+    if (boleh.length && ayun < Math.max(1, Math.ceil(boleh.length / 8)) && Math.random() < (boleh.length > 3 ? 0.5 : 0.07)) {
+      const e = acak(boleh); ayun += 1; e.classList.add('ayun');
+      setTimeout(() => { e.classList.remove('ayun'); ayun -= 1; }, 1700);
+    }
+  }, 150);
 }
 
 // Ikon SVG. Emoji di dalam teks antarmuka diganti otomatis menjadi ikon ini (lihat pasangIkon).

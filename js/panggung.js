@@ -1,12 +1,13 @@
 // Layar panggung (dibagikan di Zoom). Bila dibuka oleh akun pemandu, layar ini juga yang menjalankan permainan:
 // tombol MULAI ada di lobi, lalu soal dan stage berganti sendiri.
 import { siapkan } from './toko.js';
-import { STAGE, WARNA, esc, daftar, avatarHTML, hitungMundur, bunyi, pasangIkon, Musik } from './umum.js';
+import { STAGE, WARNA, esc, daftar, avatarHTML, hitungMundur, bunyi, pasangIkon, hidupkanKarakter, Musik } from './umum.js';
 import { Wasit } from './wasit.js';
 import { Dunia } from './dunia.js';
 
 const akar = document.getElementById('akar');
 pasangIkon();
+hidupkanKarakter();
 const el = (id) => document.getElementById(id);
 const q = new URLSearchParams(location.search);
 const kode = (q.get('r') || '').toUpperCase();
@@ -67,7 +68,7 @@ function gambar(paksa) {
   if (!pub) return;
   const kunci = [pub.fase, pub.soal?.id, pub.stage, pub.ronde, pub.nomor].join('|') + (pub.fase === 'lobi' ? '|' + Object.keys(peserta).length + '|' + pub.terkunci : '');
   const diDunia = ['soal', 'buka'].includes(pub.fase) && !!pub.soal;
-  dunia.tampil(diDunia); if (el('jeda')) el('jeda').hidden = !pub.jeda;
+  dunia.tampil(diDunia); akar.firstElementChild?.classList.toggle('tertutup', diDunia); if (el('jeda')) el('jeda').hidden = !pub.jeda;
   if (diDunia) aturDunia();
   if (pub.fase === 'soal' && kunci === kunciLama) return;
   if (kunci === kunciLama && !paksa) return;
