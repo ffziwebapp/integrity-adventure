@@ -42,7 +42,7 @@ function tampilan() {
 function gambar() {
   const t = tampilan();
   const idSoal = pub?.soal?.id || '';
-  const kunciBaru = [t, idSoal, pub?.stage, pub?.ronde, saya?.status, saya?.nyawa, saya?.kejadian?.id, pilihan[idSoal], !!saya, pub?.jumlahPemain, t === 'masuk' ? 'f' : ''].join('|');
+  const kunciBaru = [t, idSoal, pub?.stage, pub?.ronde, saya?.status, saya?.nyawa, saya?.kejadian?.id, saya?.poin, pilihan[idSoal], !!saya, pub?.jumlahPemain, t === 'masuk' ? 'f' : ''].join('|');
   if (kunciBaru === kunciLama) return;
   const viewLama = kunciLama.split('|')[0]; kunciLama = kunciBaru;
   if (t === 'masuk' && viewLama === 'masuk') return; // jangan timpa isian yang sedang diketik
@@ -64,7 +64,7 @@ function vMasuk() {
   <div class="kartu">
     <div class="kepala-kartu"><h2>Registrasi Peserta</h2><span class="cip-ruang">Ruang ${esc(kode)}</span></div>
     <label class="lb" for="nama">Nama Panggilan</label>
-    <input class="isian" id="nama" maxlength="14" autocomplete="off" placeholder="2–14 karakter" value="${esc(form.nama)}">
+    <input class="isian" id="nama" maxlength="5" autocomplete="off" autocapitalize="characters" placeholder="Maks. 5 huruf" value="${esc(form.nama)}">
     <label class="lb">Pilih Karakter</label>
     <div class="kisi-av">${Array.from({ length: JUMLAH_AVATAR }, (_, i) => `<button type="button" data-av="${i}" class="${i === form.avatar ? 'pilih' : ''}" aria-label="Karakter ${i + 1}" aria-pressed="${i === form.avatar}">${avatarHTML({ avatar: i, warna: form.warna })}</button>`).join('')}</div>
     <label class="lb">Warna Karakter</label>
@@ -76,7 +76,7 @@ function vMasuk() {
 }
 
 function vLobi() {
-  return `${bilah()}<div class="tengah">${avatarHTML(saya, 'super')}
+  return `${bilah()}<div class="tengah">${avatarHTML(saya, 'super lambai')}
     <h1 class="judul">${esc(saya.nama)}</h1>
     <p class="ket">${pub.jumlahPemain || 1} pemain sudah masuk</p>
     <div class="kartu aturan"><span>❤️ Kamu punya 3 nyawa</span><span>📄 Salah 1× = SP 1, salah 2× = SP 2</span><span>🚔 Salah 3× = masuk penjara</span><span>🔥 5 benar beruntun = +1 nyawa</span><span>⚔️ Stage terakhir: satu salah langsung penjara</span></div>
@@ -119,13 +119,15 @@ function vBuka() {
   const iKunci = HURUF.indexOf(b.kunci);
   const jenis = saya?.kejadian?.id === s.id ? saya.kejadian.jenis : null;
   let atas;
-  if (jenis === 'benar') atas = '<p class="vonis">BENAR! 🎉</p>';
-  else if (jenis === 'bonus') atas = '<p class="vonis">BENAR! 🎉</p><div class="bonus">❤️ +1 NYAWA · 5 BERUNTUN!</div>';
-  else if (jenis === 'sp1') atas = `<p class="vonis salah">${terpilih ? 'SALAH' : 'WAKTU HABIS'}</p><div class="surat">SP 1<small>Surat Peringatan Pertama</small></div>`;
-  else if (jenis === 'sp2') atas = `<p class="vonis salah">${terpilih ? 'SALAH' : 'WAKTU HABIS'}</p><div class="surat sp2">SP 2<small>Satu lagi masuk penjara!</small></div>`;
-  else if (jenis === 'penjara') atas = `<p class="vonis salah">${terpilih ? 'SALAH' : 'WAKTU HABIS'}</p><div class="sel">${avatarHTML(saya, 'besar')}</div><p class="ket">Kamu masuk PENJARA 🚔</p>`;
-  else if (jenis === 'lambat') atas = `<p class="vonis salah">BENAR, TAPI…</p><div class="sel">${avatarHTML(saya, 'besar')}</div><p class="ket">Kamu termasuk yang paling lambat. Zona menyempit!</p>`;
-  else if (jenis === 'ulang') atas = '<p class="vonis salah">SEMUA SALAH!</p><p class="ket">Tidak ada yang tersingkir. Ronde diulang.</p>';
+  const aku = (ekspresi) => (saya ? avatarHTML(saya, 'besar ' + ekspresi) : '');
+  const poinBaru = saya?.poin ? `<p class="poin-baru">Poinmu: ${saya.poin}</p>` : '';
+  if (jenis === 'benar') atas = `<p class="vonis">BENAR! 🎉</p>${aku('e-senang lompat')}${poinBaru}`;
+  else if (jenis === 'bonus') atas = `<p class="vonis">BENAR! 🎉</p>${aku('e-senang lompat')}<div class="bonus">❤️ +1 NYAWA · 5 BERUNTUN!</div>${poinBaru}`;
+  else if (jenis === 'sp1') atas = `<p class="vonis salah">${terpilih ? 'SALAH' : 'WAKTU HABIS'}</p>${aku('e-kaget kejut')}<div class="surat">SP 1<small>Surat Peringatan Pertama</small></div>`;
+  else if (jenis === 'sp2') atas = `<p class="vonis salah">${terpilih ? 'SALAH' : 'WAKTU HABIS'}</p>${aku('e-kaget kejut')}<div class="surat sp2">SP 2<small>Satu lagi masuk penjara!</small></div>`;
+  else if (jenis === 'penjara') atas = `<p class="vonis salah">${terpilih ? 'SALAH' : 'WAKTU HABIS'}</p><div class="sel">${aku('e-tangis')}</div><p class="ket">Kamu masuk PENJARA 🚔</p>`;
+  else if (jenis === 'lambat') atas = `<p class="vonis salah">BENAR, TAPI…</p><div class="sel">${aku('e-tangis')}</div><p class="ket">Kamu termasuk yang paling lambat. Zona menyempit!</p>`;
+  else if (jenis === 'ulang') atas = `<p class="vonis salah">SEMUA SALAH!</p>${aku('e-kaget')}<p class="ket">Tidak ada yang tersingkir. Ronde diulang.</p>`;
   else atas = `<p class="vonis ${terpilih === b.kunci ? '' : 'salah'}">${!terpilih ? 'Jawabannya…' : terpilih === b.kunci ? 'Tebakanmu benar' : 'Tebakanmu salah'}</p>`;
   const bagus = ['benar', 'bonus'].includes(jenis) || (!jenis && terpilih === b.kunci);
   return `${bilah()}<div class="hero ${bagus ? '' : jenis === 'ulang' || !terpilih && !jenis ? 'netral' : 'salah'}">${atas}</div>
@@ -134,19 +136,19 @@ function vBuka() {
 }
 
 function vRekap() {
-  if (penonton()) return `${bilah()}<div class="tengah">${saya ? `<div class="sel">${avatarHTML(saya, 'besar')}</div>` : ''}<p class="ket">Stage ${pub.stage} selesai. Tersisa ${pub.sisa} pemain.</p></div>`;
+  if (penonton()) return `${bilah()}<div class="tengah">${saya ? `<div class="sel">${avatarHTML(saya, 'besar e-tangis')}</div>` : ''}<p class="ket">Stage ${pub.stage} selesai. Tersisa ${pub.sisa} pemain.</p></div>`;
   const lanjut = pub.stage >= 4 ? 'ARENA TERAKHIR' : `Stage ${pub.stage + 1}`;
-  return `${bilah()}<div class="tengah"><p class="vonis">LANJUT! 🏃</p>${avatarHTML(saya, 'super')}
+  return `${bilah()}<div class="tengah"><p class="vonis">LANJUT! 🏃</p>${avatarHTML(saya, 'super e-senang lompat')}
     <p class="ket">Kamu maju ke ${lanjut}</p>
-    <div class="kartu aturan"><span>Status: ${LABEL_STATUS[saya.status]}</span><span>Nyawa: ${saya.nyawa}</span><span>Total benar: ${saya.benar}</span></div></div>`;
+    <div class="kartu aturan"><span>Status: ${LABEL_STATUS[saya.status]}</span><span>Nyawa: ${saya.nyawa}</span><span>Benar: ${saya.benar} · Poin: ${saya.poin || 0}</span></div></div>`;
 }
 
 function vAkhir() {
   const juara = saya?.status === 'juara';
   const pd = daftar(pub.podium);
-  return `${bilah()}<div class="tengah">${juara ? `<div style="font-size:70px">👑</div>${avatarHTML(saya, 'super')}<p class="vonis">KAMU JUARANYA!</p>`
+  return `${bilah()}<div class="tengah">${juara ? `<div style="font-size:70px">👑</div>${avatarHTML(saya, 'super e-senang lompat')}<p class="vonis">KAMU JUARANYA!</p>`
     : `<p class="vonis">Selesai!</p><p class="ket">Pemenang utama:</p>${pd[0] ? `${avatarHTML(pd[0], 'besar')}<h1 class="judul">${esc(pd[0].nama)}</h1>` : ''}`}
-    ${saya ? `<div class="kartu aturan"><span>Total jawaban benarmu: ${saya.benar}</span></div>` : ''}
+    ${saya ? `<div class="kartu aturan"><span>Jawaban benar: ${saya.benar} · Poin: ${saya.poin || 0}</span></div>` : ''}
     <p class="ket">Terima kasih sudah ikut bermain 🙌</p></div>`;
 }
 
@@ -164,9 +166,9 @@ function ikat(t) {
       akar.querySelectorAll('[data-av] .av').forEach((a) => a.style.setProperty('--w', WARNA[form.warna]));
     }; });
     akar.querySelector('#masuk').onclick = async (e) => {
-      const n = form.nama.trim().replace(/\s+/g, ' ');
+      const n = form.nama.trim().replace(/\s+/g, '').slice(0, 5);
       const g = akar.querySelector('#galat');
-      if (n.length < 2 || n.length > 14) { g.textContent = 'Nama panggilan 2–14 karakter.'; return; }
+      if (n.length < 2 || n.length > 5) { g.textContent = 'Nama panggilan 2 sampai 5 huruf.'; return; }
       e.target.disabled = true; g.textContent = '';
       try {
         await toko.tulis(`ruang/${kode}/peserta/${uid}`, { nama: n, avatar: form.avatar, warna: form.warna, nyawa: 3, beruntun: 0, status: 'aktif', benar: 0, waktu: 0, masukPada: TS });

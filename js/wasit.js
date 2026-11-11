@@ -1,12 +1,18 @@
 // Wasit: logika pemandu. Berjalan di laptop pemandu, menilai jawaban dan menggerakkan permainan.
-import { nilaiSoal, nilaiArena, uidAktif, rekapStatus, podium, durasiArena } from './aturan.js';
+import { nilaiSoal, nilaiArena, uidAktif, rekapStatus, podium, durasiArena, peringkatPoin } from './aturan.js';
 import { TS } from './toko.js';
 import { STAGE, HURUF, acakUrut, daftar } from './umum.js';
 
 const TENGGANG = 1200; // ms kelonggaran jaringan setelah waktu habis
+// Jeda otomatis antarlayar (ms). Tambahkan ?cepat pada alamat untuk pengujian.
+const CEPAT = typeof location !== 'undefined' && new URLSearchParams(location.search).has('cepat') ? 0.12 : 1;
+const TUNGGU = { intro: 4500, buka: 7500, bukaArena: 6000, rekap: 9000 };
+const ringkas = (x) => ({ nama: x.nama, avatar: x.avatar, warna: x.warna, benar: x.benar || 0, poin: x.poin || 0 });
 
 export class Wasit {
-  constructor(toko, kode, onUbah) {
+  /** opsi.pengemudi = true hanya untuk halaman panggung: di sanalah pewaktu dan penilaian berjalan. */
+  constructor(toko, kode, onUbah, opsi = {}) {
+    this.pengemudi = !!opsi.pengemudi; this.idSaya = Wasit.idTab(); this.kunciAuto = ''; this.perintahLalu = undefined;
     this.toko = toko; this.kode = kode; this.P = `ruang/${kode}`; this.onUbah = onUbah || (() => {});
     this.pub = null; this.peserta = {}; this.bank = {}; this.w = {};
     this.menilai = false; this.timer = null; this.lepasJawab = null; this.idPantau = null; this.jawabMentah = {};
@@ -17,7 +23,55 @@ export class Wasit {
     this.bank = (await toko.baca('bank')) || {};
     this.w = (await toko.baca(`${P}/wasit`)) || {};
     toko.pantau(`${P}/peserta`, (v) => { this.peserta = v || {}; this.#catatJumlah(); this.onUbah(); });
-    toko.pantau(`${P}/publik`, (v) => { this.pub = v; this.#aturSoal(); this.onUbah(); });
+    if (this.pengemudi) {
+      // Hanya satu panggung yang boleh mengemudi. Yang lain menjadi penonton.
+      const lain = await toko.baca(`${P}/pengemudi`);
+      if (lain && lain.id !== this.idSaya && toko.sekarang() - (lain.t || 0) < 7000) this.pengemudi = false;
+      else {
+        const denyut = () => toko.tulis(`${P}/pengemudi`, { id: this.idSaya, t: TS }).catch(() => {});
+        await denyut(); this.tDenyut = setInterval(denyut, 3000);
+      }
+    }
+    toko.pantau(`${P}/publik`, (v) => { this.pub = v; this.#aturSoal(); this.#otomatis(); this.onUbah(); });
+    if (this.pengemudi) {
+      toko.pantau(`${P}/perintah`, (v) => {
+        const id = v?.id || null;
+        if (this.perintahLalu === undefined) { this.perintahLalu = id; return; } // abaikan perintah lama saat baru dibuka
+        if (!id || id === this.perintahLalu) return;
+        this.perintahLalu = id; this.#jalankan(v.aksi).catch((e) => { this.galat = e.message; this.onUbah(); });
+      });
+    }
+  }
+
+  /** Dipanggil dari tombol mana pun. Di panggung langsung dijalankan; di panel pemandu dikirim sebagai perintah. */
+  async perintah(aksi) {
+    this.galat = '';
+    if (this.pengemudi) return this.#jalankan(aksi);
+    return this.toko.tulis(`${this.P}/perintah`, { aksi, id: Math.random().toString(36).slice(2, 10), t: TS });
+  }
+  #jalankan(aksi) {
+    if (aksi === 'lanjut') return this.lanjut();
+    if (aksi === 'ganti') return this.gantiSoal();
+    if (aksi === 'jeda') return this.toko.tulis(`${this.P}/publik/jeda`, !this.pub?.jeda);
+    return Promise.resolve();
+  }
+
+  // Maju sendiri: intro → soal → buka → soal berikutnya → rekap → stage berikutnya. Podium menunggu pemandu.
+  #otomatis() {
+    if (!this.pengemudi) return;
+    const p = this.pub;
+    const kunci = p ? [p.fase, p.soal?.id, p.stage, p.ronde, !!p.jeda].join('|') : '';
+    if (kunci === this.kunciAuto) return;
+    this.kunciAuto = kunci; clearTimeout(this.tAuto);
+    if (!p || p.jeda) return;
+    const ms = p.fase === 'intro' ? TUNGGU.intro : p.fase === 'rekap' ? TUNGGU.rekap : p.fase === 'buka' ? (p.stage === 5 ? TUNGGU.bukaArena : TUNGGU.buka) : 0;
+    if (ms) this.tAuto = setTimeout(() => this.lanjut().catch((e) => { this.galat = e.message; this.onUbah(); }), ms * CEPAT);
+  }
+
+  // Pengenal tab yang bertahan saat halaman dimuat ulang, supaya panggung yang sama bisa mengemudi lagi.
+  static idTab() {
+    try { let id = sessionStorage.getItem('ia-tab'); if (!id) { id = Math.random().toString(36).slice(2, 10); sessionStorage.setItem('ia-tab', id); } return id; }
+    catch { return Math.random().toString(36).slice(2, 10); }
   }
 
   static async buatRuang(toko) {
@@ -43,8 +97,8 @@ export class Wasit {
 
   // --- Tombol utama ---
   async lanjut() {
-    const p = this.pub; if (!p || this.sibuk) return;
-    this.sibuk = true;
+    const p = this.pub; if (!p || this.sibuk || !this.pengemudi) return;
+    this.sibuk = true; clearTimeout(this.tAuto);
     try {
       if (p.fase === 'lobi') await this.#mulaiKuis();
       else if (p.fase === 'intro') await this.#kirimSoal(p.stage, 1, 1);
@@ -136,6 +190,7 @@ export class Wasit {
 
   // Dipanggil tiap publik berubah: pasang pewaktu & pemantau jawaban untuk soal aktif.
   #aturSoal() {
+    if (!this.pengemudi) return;
     const p = this.pub;
     clearTimeout(this.timer);
     if (!p || p.fase !== 'soal' || !p.soal || typeof p.mulaiPada !== 'number') {
@@ -180,7 +235,7 @@ export class Wasit {
 
   async tutupSoal() {
     const p = this.pub;
-    if (this.menilai || !p || p.fase !== 'soal') return;
+    if (!this.pengemudi || this.menilai || !p || p.fase !== 'soal') return;
     this.menilai = true; clearTimeout(this.timer);
     try {
       const q = this.bank[p.soal.id];
@@ -193,8 +248,8 @@ export class Wasit {
       }
       const main = this.aktif; const arena = p.stage === 5;
       this.w.hitung = (this.w.hitung || 0) + 1;
-      const r = arena ? nilaiArena(this.peserta, jawaban, q.kunci, p.ronde, this.w.hitung)
-        : nilaiSoal(this.peserta, jawaban, q.kunci, p.stage, this.w.hitung);
+      const r = arena ? nilaiArena(this.peserta, jawaban, q.kunci, p.ronde, this.w.hitung, p.durasi * 1000)
+        : nilaiSoal(this.peserta, jawaban, q.kunci, p.stage, this.w.hitung, p.durasi * 1000);
 
       const sebaran = q.opsi.map((_, i) => main.filter((u) => jawaban[u]?.pilihan === HURUF[i]).length);
       const salah = main.filter((u) => jawaban[u]?.pilihan !== q.kunci).length;
@@ -235,8 +290,7 @@ export class Wasit {
     if (p.nomor < p.jumlah) return this.#kirimSoal(p.stage, p.nomor + 1, 0);
     const r = rekapStatus(this.peserta);
     const semua = Object.values(this.peserta);
-    const top = semua.filter((x) => x.status !== 'penjara').sort((a, c) => c.benar - a.benar || a.waktu - c.waktu).slice(0, 5)
-      .map((x) => ({ nama: x.nama, avatar: x.avatar, warna: x.warna, benar: x.benar }));
+    const top = peringkatPoin(this.peserta, 5).map(ringkas);
     return this.toko.perbarui({
       [`${this.P}/publik/fase`]: 'rekap',
       [`${this.P}/publik/rekap`]: { ...r, penjaraBaru: semua.filter((x) => x.stagePenjara === p.stage).length, top },
@@ -244,7 +298,7 @@ export class Wasit {
   }
 
   #podium() {
-    const pd = podium(this.peserta).map((x) => ({ nama: x.nama, avatar: x.avatar, warna: x.warna, benar: x.benar }));
+    const pd = podium(this.peserta).map(ringkas);
     const tersulit = Object.entries(this.w.statistik || {})
       .filter(([, v]) => v.t > 0 && v.s > 0)
       .sort((a, c) => c[1].s / c[1].t - a[1].s / a[1].t).slice(0, 3)
@@ -254,14 +308,15 @@ export class Wasit {
       });
     return this.toko.perbarui({
       [`${this.P}/publik/fase`]: 'podium', [`${this.P}/publik/podium`]: pd, [`${this.P}/publik/tersulit`]: tersulit,
+      [`${this.P}/publik/peringkat`]: peringkatPoin(this.peserta, 5).map(ringkas),
     });
   }
 
   // --- Tombol darurat ---
   /** Membatalkan soal yang sedang tampil/baru dinilai, mengembalikan keadaan peserta, memakai soal pengganti. */
   async gantiSoal() {
-    const p = this.pub; if (!p || !['soal', 'buka'].includes(p.fase) || this.menilai) return;
-    clearTimeout(this.timer);
+    const p = this.pub; if (!this.pengemudi || !p || !['soal', 'buka'].includes(p.fase) || this.menilai) return;
+    clearTimeout(this.timer); clearTimeout(this.tAuto);
     const sudahDinilai = p.fase === 'buka';
     if (sudahDinilai) {
       this.w.hitung = Math.max(0, (this.w.hitung || 1) - 1);
@@ -283,5 +338,5 @@ export class Wasit {
 
   kunciPintu(nilai) { return this.toko.tulis(`${this.P}/publik/terkunci`, !!nilai); }
   keluarkan(uid) { return this.toko.hapus(`${this.P}/peserta/${uid}`); }
-  hapusRuang() { clearTimeout(this.timer); return this.toko.hapus(this.P); }
+  hapusRuang() { clearTimeout(this.timer); clearTimeout(this.tAuto); clearInterval(this.tDenyut); return this.toko.hapus(this.P); }
 }

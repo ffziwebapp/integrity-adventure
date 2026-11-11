@@ -32,15 +32,28 @@ const MULUT = [
   `<path d="M24 43h12" fill="none" stroke="${TINTA}" stroke-width="3.2" stroke-linecap="round"/>`,
   `<path d="M21 40h18q-1 10-9 10t-9-10z"/><path d="M24 41h12v3H24z" fill="#fff"/>`,
 ];
+const G2 = `fill="none" stroke="${TINTA}" stroke-width="4.6" stroke-linecap="round"`;
+/** Karakter berlengan dengan beberapa ekspresi. Ekspresi dipilih lewat kelas CSS pada pembungkusnya:
+ *  e-senang, e-sedih, e-kaget, e-tangis; kelas "lambai" membuat tangan kanan melambai. */
 export function karakterSVG(avatar = 0) {
   const a = ((avatar % JUMLAH_AVATAR) + JUMLAH_AVATAR) % JUMLAH_AVATAR;
-  return `<svg viewBox="0 0 60 72" aria-hidden="true" focusable="false"><rect x="13" y="62" width="13" height="8" rx="4" fill="${TINTA}"/><rect x="34" y="62" width="13" height="8" rx="4" fill="${TINTA}"/>`
-    + `<rect x="4" y="2" width="52" height="64" rx="26" fill="var(--w,#ccc)"/><path d="M4 44v-4q26 12 52 0v4a26 22 0 0 1-52 0z" fill="#000" opacity=".13"/>`
-    + `<ellipse cx="20" cy="15" rx="9" ry="5" fill="#fff" opacity=".4" transform="rotate(-24 20 15)"/><g fill="${TINTA}">${MATA[a % 4]}${MULUT[Math.floor(a / 4) % 4]}</g></svg>`;
+  return `<svg viewBox="0 0 60 72" aria-hidden="true" focusable="false">`
+    + `<g class="tg tg-kiri"><path d="M6 36q-11 5-10 17" ${G2}/></g><g class="tg tg-kanan"><path d="M54 36q11 5 10 17" ${G2}/></g>`
+    + `<rect x="13" y="62" width="13" height="8" rx="4" fill="${TINTA}"/><rect x="34" y="62" width="13" height="8" rx="4" fill="${TINTA}"/>`
+    + `<rect x="4" y="2" width="52" height="64" rx="26" fill="var(--w,#ccc)" stroke="${TINTA}" stroke-width="2.4"/><path d="M5.200 44v-3q24.800 11 49.600 0v3a24.800 21 0 0 1-49.600 0z" fill="#000" opacity=".13"/>`
+    + `<ellipse cx="20" cy="15" rx="9" ry="5" fill="#fff" opacity=".45" transform="rotate(-24 20 15)"/>`
+    + `<g class="mata" fill="${TINTA}">${MATA[a % 4]}</g>`
+    + `<g class="mt mt-biasa" fill="${TINTA}">${MULUT[Math.floor(a / 4) % 4]}</g>`
+    + `<g class="mt mt-senang" fill="${TINTA}"><path d="M19 39h22q-1 12-11 12T19 39z"/><path d="M23 40h14v3H23z" fill="#fff"/></g>`
+    + `<g class="mt mt-sedih"><path d="M23 46q7-7 14 0" fill="none" stroke="${TINTA}" stroke-width="3.200" stroke-linecap="round"/></g>`
+    + `<g class="mt mt-kaget" fill="${TINTA}"><ellipse cx="30" cy="45" rx="5" ry="6.500"/></g>`
+    + `<g class="alis"><path d="M15 25l9-4M45 25l-9-4" fill="none" stroke="${TINTA}" stroke-width="2.800" stroke-linecap="round"/></g>`
+    + `<g class="air" fill="#4cc9f0" stroke="${TINTA}" stroke-width="1"><path d="M19 36q-4 6 0 8q4-2 0-8z"/><path d="M41 36q-4 6 0 8q4-2 0-8z"/></g></svg>`;
 }
 export const warnaKe = (i) => WARNA[(((i || 0) % WARNA.length) + WARNA.length) % WARNA.length];
 export function avatarHTML(p, kelas = '') {
-  return `<span class="av ${kelas}" style="--w:${warnaKe(p.warna)}">${karakterSVG(p.avatar || 0)}</span>`;
+  const tunda = (((p.avatar || 0) * 7 + (p.warna || 0) * 3) % 23) / 6;
+  return `<span class="av ${kelas}" style="--w:${warnaKe(p.warna)};--d:-${tunda.toFixed(2)}s">${karakterSVG(p.avatar || 0)}</span>`;
 }
 
 // Ikon SVG. Emoji di dalam teks antarmuka diganti otomatis menjadi ikon ini (lihat pasangIkon).
@@ -157,3 +170,44 @@ export function bunyi(jenis) {
     }
   } catch { /* suara tidak wajib */ }
 }
+
+// ---------- Musik latar (dibangkitkan langsung, tanpa berkas suara) ----------
+// Lagu pendek buatan sendiri: empat akor berulang, bas, iringan, dan melodi.
+export const Musik = (() => {
+  const AKOR = [[261.63, 329.63, 392.0], [220.0, 261.63, 329.63], [174.61, 220.0, 261.63], [196.0, 246.94, 293.66]]; // C Am F G
+  const MELODI = [0, 2, 1, 2, 0, 1, 2, 1, 2, 1, 0, 1, 2, 2, 1, 0]; // indeks nada akor per ketukan seperdelapan
+  let ctx = null, keluaran = null, tm = null, langkah = 0, kapan = 0, tempo = 112, hidup = false;
+  const nada = (f, t, lama, jenis, keras) => {
+    const o = ctx.createOscillator(), g = ctx.createGain();
+    o.type = jenis; o.frequency.value = f;
+    g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(keras, t + 0.015); g.gain.exponentialRampToValueAtTime(0.0001, t + lama);
+    o.connect(g).connect(keluaran); o.start(t); o.stop(t + lama + 0.02);
+  };
+  const jadwal = () => {
+    const d8 = 60 / tempo / 2;
+    while (kapan < ctx.currentTime + 0.25) {
+      const birama = Math.floor(langkah / 8) % 4, k = langkah % 8, ak = AKOR[birama];
+      if (k % 4 === 0) nada(ak[0] / 2, kapan, d8 * 3.4, 'triangle', 0.22);          // bas
+      if (k % 2 === 1) { nada(ak[1], kapan, d8 * 0.8, 'triangle', 0.07); nada(ak[2], kapan, d8 * 0.8, 'triangle', 0.07); } // iringan
+      const m = MELODI[(langkah % 16)]; const oktaf = Math.floor(langkah / 16) % 2 ? 2 : 1;
+      if (k !== 3) nada(ak[m] * 2 * (oktaf === 2 && k > 5 ? 2 : 1), kapan, d8 * 0.9, 'square', 0.045);   // melodi
+      if (k % 2 === 0) { const n = ctx.createOscillator(), g = ctx.createGain(); n.type = 'square'; n.frequency.setValueAtTime(k % 4 ? 180 : 90, kapan); n.frequency.exponentialRampToValueAtTime(40, kapan + 0.08);
+        g.gain.setValueAtTime(0.09, kapan); g.gain.exponentialRampToValueAtTime(0.0001, kapan + 0.09); n.connect(g).connect(keluaran); n.start(kapan); n.stop(kapan + 0.1); } // ketukan
+      kapan += d8; langkah += 1;
+    }
+  };
+  return {
+    get hidup() { return hidup; },
+    mulai() {
+      try {
+        ctx = ctx || new (window.AudioContext || window.webkitAudioContext)();
+        if (!keluaran) { keluaran = ctx.createGain(); keluaran.gain.value = 0.5; keluaran.connect(ctx.destination); }
+        ctx.resume(); if (hidup) return; hidup = true; kapan = ctx.currentTime + 0.05; tm = setInterval(jadwal, 60); jadwal();
+      } catch { hidup = false; }
+    },
+    berhenti() { hidup = false; clearInterval(tm); },
+    alih() { if (hidup) this.berhenti(); else this.mulai(); return hidup; },
+    tempo(bpm) { tempo = bpm; },
+    volume(v) { if (keluaran) keluaran.gain.value = v; },
+  };
+})();

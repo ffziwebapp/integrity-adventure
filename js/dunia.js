@@ -94,7 +94,7 @@ export class Dunia {
     const diSel = (u) => this.peserta[u].status === 'penjara' && !(baruSel(u) && !(buka && this.terap));
     const main = semua.filter((u) => !diSel(u)); const tahanan = semua.filter(diSel);
     const S = main.length <= 12 ? 86 : main.length <= 30 ? 66 : main.length <= 50 ? 54 : 46;
-    const adaNama = main.length <= 10;
+    const adaNama = true; // nama panggilan (maks. 5 huruf) selalu tampil di badan karakter
 
     // Urutan kedatangan di tiap zona (agar tempat berdiri stabil).
     const tampilPilih = p.stage < 5 || buka;
@@ -143,7 +143,8 @@ export class Dunia {
       if (!o) {
         const el = document.createElement('div'); el.className = 'k';
         el.innerHTML = `<div class="badan">${karakterSVG(d.avatar || 0)}</div><b class="cap"></b><span class="nm">${esc(d.nama)}</span>`;
-        el.style.setProperty('--w', warnaKe(d.warna));
+        el.style.setProperty('--w', warnaKe(d.warna)); el.style.setProperty('--d', `-${(Math.random() * 4).toFixed(2)}s`);
+        o = null; el.dataset.lambai = Math.random() < 0.3 ? '1' : '';
         wadah.appendChild(el); o = { el, x: null, y: null }; this.orang.set(u, o);
       }
       const [x, y, zi] = tempat.get(u); const sel = zi === -2; const ukuran = sel ? 30 : S;
@@ -157,8 +158,12 @@ export class Dunia {
       o.el.style.setProperty('--u', ukuran + 'px'); o.el.style.zIndex = Math.round(y);
       const jenis = buka && this.terap && d.kejadian?.id === idSoal ? d.kejadian.jenis : '';
       const salahTempat = buka && this.terap && !sel && zi !== iKunci && jenis !== 'ulang';
+      // Ekspresi: senang bila benar, kaget bila kena SP, menangis bila masuk penjara, murung bila salah.
+      const ekspresi = sel ? 'e-tangis' : jenis === 'benar' || jenis === 'bonus' ? 'e-senang sorak'
+        : jenis === 'sp1' || jenis === 'sp2' ? 'e-kaget' : jenis === 'penjara' || jenis === 'lambat' ? 'e-tangis'
+        : salahTempat ? 'e-sedih' : (zi === -1 && o.el.dataset.lambai ? 'lambai' : '');
       o.el.className = ['k', o.el.classList.contains('jalan') ? 'jalan' : '', sel ? 'tahanan' : '', adaNama && !sel ? 'bernama' : '',
-        salahTempat ? 'ambles' : '', jenis === 'benar' || jenis === 'bonus' ? 'sorak' : '', jenis === 'bonus' ? 'bonus' : ''].join(' ');
+        salahTempat ? 'ambles' : '', jenis === 'bonus' ? 'bonus' : '', ekspresi].join(' ');
       const cap = o.el.querySelector('.cap');
       const teks = sel || p.stage === 5 ? '' : d.status === 'sp1' ? 'SP 1' : d.status === 'sp2' ? 'SP 2' : '';
       if (cap.textContent !== teks) { cap.textContent = teks; cap.className = teks ? `cap ${d.status} baru` : 'cap'; }

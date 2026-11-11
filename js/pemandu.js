@@ -48,7 +48,6 @@ async function bukaRuang() {
   localStorage.setItem('ia-kode-pemandu', kode);
   wasit = new Wasit(toko, kode, gambar);
   try { await wasit.mulai(); } catch (e) { return vTolak(e); }
-  window.addEventListener('keydown', (e) => { if (e.code === 'Space' && !/INPUT|TEXTAREA|BUTTON/.test(document.activeElement.tagName)) { e.preventDefault(); aksi('lanjut'); } });
   if (UJI) window.__wasit = wasit;
   gambar();
 }
@@ -71,8 +70,9 @@ function vPilih(galat = '') {
 async function aksi(nama, arg) {
   pesan = '';
   try {
-    if (nama === 'lanjut') await wasit.lanjut();
-    else if (nama === 'ganti') { if (confirm('Batalkan soal ini dan pakai soal pengganti? Keadaan peserta dikembalikan seperti sebelum soal ini.')) await wasit.gantiSoal(); }
+    if (nama === 'lanjut' || nama === 'jeda') { await wasit.perintah(nama); pesan = 'Perintah dikirim ke panggung.'; }
+    else if (nama === 'salin') { await navigator.clipboard.writeText(new URL(`index.html?r=${kode}${akhiran}`, location.href).href); pesan = 'Tautan peserta tersalin.'; }
+    else if (nama === 'ganti') { if (confirm('Batalkan soal ini dan pakai soal pengganti? Keadaan peserta dikembalikan seperti sebelum soal ini.')) { await wasit.perintah('ganti'); pesan = 'Perintah dikirim ke panggung.'; } }
     else if (nama === 'kunci') await wasit.kunciPintu(!wasit.pub.terkunci);
     else if (nama === 'keluarkan') { if (confirm('Keluarkan peserta ini?')) await wasit.keluarkan(arg); }
     else if (nama === 'hapus') { if (confirm('Hapus ruang beserta seluruh datanya? Tindakan ini tidak bisa dibatalkan.')) { await wasit.hapusRuang(); localStorage.removeItem('ia-kode-pemandu'); location.href = location.pathname + (akhiran ? '?uji' : ''); } }
@@ -99,7 +99,7 @@ function gambar() {
   const p = wasit.pub;
   if (p === null) { akar.innerHTML = '<div class="hp"><div class="kartu"><h2>Ruang sudah dihapus.</h2></div></div>'; return; }
   if (!p) return;
-  const semua = Object.entries(wasit.peserta).sort((a, b) => (a[1].status === 'penjara') - (b[1].status === 'penjara') || b[1].benar - a[1].benar);
+  const semua = Object.entries(wasit.peserta).sort((a, b) => (a[1].status === 'penjara') - (b[1].status === 'penjara') || (b[1].poin || 0) - (a[1].poin || 0));
   const aktif = semua.filter(([, x]) => x.status !== 'penjara').length;
   const urlMasuk = new URL(`index.html?r=${kode}${akhiran}`, location.href).href;
   const urlPanggung = new URL(`panggung.html?r=${kode}${akhiran}`, location.href).href;
@@ -116,9 +116,12 @@ function gambar() {
       <button class="tb kecil" data-a="keluarAkun">Keluar akun</button></div>
     <div class="dua">
       <div class="kartu">
-        <button class="tb pm-lanjut" data-a="lanjut" ${p.fase === 'selesai' ? 'disabled' : ''}>${esc(wasit.labelLanjut())} <small style="font-size:14px">(Spasi)</small></button>
+        <a class="tb pm-lanjut" href="${esc(urlPanggung)}" target="_blank" rel="noopener">${p.fase === 'lobi' ? 'BUKA PANGGUNG' : 'KEMBALI KE PANGGUNG'} ↗</a>
+        <p class="kecil-abu" style="margin-top:10px">Permainan dijalankan dari layar panggung: tombol MULAI ada di lobi, lalu soal dan stage berganti sendiri. Biarkan tab panggung tetap terbuka dan tampil di layar. Tombol di bawah ini adalah kendali jarak jauh, misalnya dari HP cadangan.</p>
         <p class="galat">${esc(pesan)}</p>
         <div class="pm-baris">
+          <button class="tb kecil" data-a="lanjut" ${['lobi', 'selesai'].includes(p.fase) ? 'disabled' : ''}>${esc(wasit.labelLanjut())}</button>
+          <button class="tb kecil" data-a="jeda" ${['lobi', 'podium', 'tersulit', 'selesai'].includes(p.fase) ? 'disabled' : ''}>${p.jeda ? 'Lanjutkan otomatis' : 'Jeda otomatis'}</button>
           <button class="tb kecil" data-a="ganti" ${bisaGanti ? '' : 'disabled'}>Ganti / Ulang Soal</button>
           <button class="tb kecil" data-a="kunci">${p.terkunci ? '🔒 Buka pintu' : '🔓 Kunci pintu'}</button>
         </div>
@@ -127,11 +130,11 @@ function gambar() {
         <div style="margin-top:14px"><h2>Bank soal: ${wasit.jumlahBank} soal</h2>
           <p class="kecil-abu">Muat dari berkas CSV (ekspor dari Google Sheets). Kunci jawaban hanya tersimpan di akun pemandu.</p>
           <input type="file" id="csv" accept=".csv,text/csv" ${p.fase === 'lobi' ? '' : 'disabled'}></div>
-        <div style="margin-top:14px"><h2>Tautan peserta</h2><input class="isian" style="font-size:15px" readonly value="${esc(urlMasuk)}" onclick="this.select()"></div>
+        <div style="margin-top:14px"><h2>Tautan peserta</h2><input class="isian" style="font-size:15px" readonly value="${esc(urlMasuk)}" onclick="this.select()"><div class="pm-baris"><button class="tb kecil" data-a="salin">Salin tautan</button></div></div>
         <div class="pm-baris"><button class="tb kecil bahaya" data-a="hapus">Hapus Ruang</button></div>
       </div>
-      <div class="kartu"><h2>Peserta (${semua.length})</h2><div class="pm-gulir"><table class="pm"><tr><th></th><th>Nama</th><th>❤️</th><th>Status</th><th>🔥</th><th>Benar</th><th></th></tr>
-        ${semua.map(([uid, x]) => `<tr><td>${avatarHTML(x, 'mini')}</td><td>${esc(x.nama)}</td><td>${x.nyawa}</td><td><span class="lencana ${x.status}">${LABEL_STATUS[x.status] || x.status}</span></td><td>${x.beruntun || 0}</td><td>${x.benar || 0}</td><td><button class="tb kecil bahaya" data-a="keluarkan" data-u="${esc(uid)}">✕</button></td></tr>`).join('')}
+      <div class="kartu"><h2>Peserta (${semua.length})</h2><div class="pm-gulir"><table class="pm"><tr><th></th><th>Nama</th><th>❤️</th><th>Status</th><th>🔥</th><th>Benar</th><th>Poin</th><th></th></tr>
+        ${semua.map(([uid, x]) => `<tr><td>${avatarHTML(x, 'mini')}</td><td>${esc(x.nama)}</td><td>${x.nyawa}</td><td><span class="lencana ${x.status}">${LABEL_STATUS[x.status] || x.status}</span></td><td>${x.beruntun || 0}</td><td>${x.benar || 0}</td><td>${x.poin || 0}</td><td><button class="tb kecil bahaya" data-a="keluarkan" data-u="${esc(uid)}">✕</button></td></tr>`).join('')}
       </table></div></div>
     </div></div>`;
   akar.querySelectorAll('[data-a]').forEach((b) => { b.onclick = () => aksi(b.dataset.a, b.dataset.u); });

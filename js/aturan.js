@@ -16,6 +16,7 @@ export function buatPeserta(nama, avatar) {
     beruntun: 0,
     status: 'aktif',      // aktif | sp1 | sp2 | penjara | juara
     benar: 0,
+    poin: 0,              // 100 per jawaban benar + bonus kecepatan sampai 100
     waktu: 0,             // total milidetik menjawab
     stagePenjara: null,
     keluarPada: null,     // urutan soal saat keluar; makin besar makin akhir
@@ -38,7 +39,9 @@ export const uidAktif = (peserta) => Object.keys(peserta).filter((u) => masihMai
  * jawaban : { uid: { pilihan, ms } }   ms = lama menjawab
  * Hasil   : { peserta, kejadian: { uid: 'benar'|'sp1'|'sp2'|'penjara'|'bonus' }, rekap, juara, semuaTumbang }
  */
-export function nilaiSoal(peserta, jawaban, kunci, stage, hitung = 0) {
+export const poinJawaban = (ms, durasiMs) => 100 + Math.round(100 * Math.max(0, Math.min(1, 1 - ms / durasiMs)));
+
+export function nilaiSoal(peserta, jawaban, kunci, stage, hitung = 0, durasiMs = 10000) {
   const baru = structuredClone(peserta);
   const kejadian = {};
   const main = uidAktif(baru);
@@ -49,6 +52,7 @@ export function nilaiSoal(peserta, jawaban, kunci, stage, hitung = 0) {
     if (j && j.pilihan === kunci) {
       p.benar += 1;
       p.waktu += j.ms;
+      p.poin = (p.poin || 0) + poinJawaban(j.ms, durasiMs);
       p.beruntun += 1;
       kejadian[uid] = 'benar';
       if (p.beruntun >= ATURAN.syaratBeruntun) {
@@ -100,7 +104,7 @@ export const durasiArena = (ronde) =>
  * Menilai satu ronde Arena Terakhir (Stage 5). Semua masuk sama rata; salah = penjara.
  * Hasil: { peserta, keluar: [uid… urut dari peringkat terbaik], ulang, juara }
  */
-export function nilaiArena(peserta, jawaban, kunci, ronde, hitung = ronde) {
+export function nilaiArena(peserta, jawaban, kunci, ronde, hitung = ronde, durasiMs = 10000) {
   const baru = structuredClone(peserta);
   const main = uidAktif(baru);
   const benar = main.filter((u) => jawaban[u] && jawaban[u].pilihan === kunci);
@@ -118,7 +122,7 @@ export function nilaiArena(peserta, jawaban, kunci, ronde, hitung = ronde) {
   // Urutan peringkat di antara yang keluar: benar-tapi-lambat di atas yang salah.
   const keluar = [...lambat, ...[...salah].sort((x, y) => ms(x) - ms(y))];
 
-  for (const uid of benar) { baru[uid].benar += 1; baru[uid].waktu += ms(uid); }
+  for (const uid of benar) { baru[uid].benar += 1; baru[uid].waktu += ms(uid); baru[uid].poin = (baru[uid].poin || 0) + poinJawaban(ms(uid), durasiMs); }
   keluar.forEach((uid, i) => {
     const p = baru[uid];
     p.nyawa = 0; p.status = 'penjara'; p.stagePenjara = 5;
@@ -137,6 +141,11 @@ export function podium(peserta) {
   const juara = semua.filter((p) => p.status === 'juara');
   const lain = semua
     .filter((p) => p.status !== 'juara')
-    .sort((a, b) => (b.keluarPada ?? 1e9) - (a.keluarPada ?? 1e9) || b.benar - a.benar || a.waktu - b.waktu);
+    .sort((a, b) => (b.keluarPada ?? 1e9) - (a.keluarPada ?? 1e9) || (b.poin || 0) - (a.poin || 0) || a.waktu - b.waktu);
   return [...juara, ...lain].slice(0, 3);
+}
+
+/** Papan peringkat poin (benar + kecepatan), untuk rekap dan layar akhir. */
+export function peringkatPoin(peserta, n = 5) {
+  return Object.values(peserta).sort((a, b) => (b.poin || 0) - (a.poin || 0) || a.waktu - b.waktu).slice(0, n);
 }

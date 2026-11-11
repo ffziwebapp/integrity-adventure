@@ -76,9 +76,9 @@ function buatTiruan() {
 
   return {
     masukAnonim: async () => uid,
-    penggunaPemandu: async () => (sessionStorage.getItem('ia-host') ? 'HOST' : null),
-    masukPemandu: async () => { sessionStorage.setItem('ia-host', '1'); return 'HOST'; },
-    keluar: async () => sessionStorage.removeItem('ia-host'),
+    penggunaPemandu: async () => (localStorage.getItem('ia-host') ? 'HOST' : null),
+    masukPemandu: async () => { localStorage.setItem('ia-host', '1'); return 'HOST'; },
+    keluar: async () => localStorage.removeItem('ia-host'),
     pantau(path, cb) {
       let lalu;
       const l = () => { const v = ambil(muat(), path) ?? null; const s = JSON.stringify(v); if (s !== lalu) { lalu = s; cb(JSON.parse(s)); } };
