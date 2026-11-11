@@ -9,15 +9,6 @@ let pub, saya, lepas = [], kunciLama = '', stopJam = null, dikeluarkan = false, 
 const pilihan = JSON.parse(sessionStorage.getItem('ia-pilih') || '{}');
 const form = { avatar: Math.floor(Math.random() * 16), warna: Math.floor(Math.random() * 8), nama: '', galat: '' };
 
-akar.innerHTML = '<div class="tengah"><p class="ket">Menyambungkan<span class="titik3"></span></p></div>';
-try {
-  toko = await siapkan(); uid = await toko.masukAnonim();
-  pasang();
-} catch (e) {
-  console.error(e);
-  akar.innerHTML = `<div class="tengah"><div class="kartu"><h2>Gagal tersambung</h2><p>Periksa koneksi internet, lalu muat ulang halaman ini.</p><p class="kecil-abu" style="margin-top:10px;word-break:break-word">Rincian: ${esc(e?.code || '')} ${esc(e?.message || e)}</p></div></div>`;
-}
-
 function pasang() {
   lepas.forEach((f) => f()); lepas = []; pub = undefined; saya = undefined; kunciLama = '';
   if (!kode) return gambar();
@@ -207,6 +198,16 @@ async function jawab(id, huruf) {
     }
   }
   const el = akar.querySelector('#terkirim'); if (el) el.textContent = '⚠️ Gagal terkirim. Periksa koneksi.';
+}
+
+// Mulai paling akhir, setelah semua fungsi tampilan di atas siap dipakai.
+akar.innerHTML = '<div class="tengah"><p class="ket">Menyambungkan<span class="titik3"></span></p></div>';
+try {
+  toko = await siapkan(); uid = await toko.masukAnonim();
+  pasang();
+} catch (e) {
+  console.error(e);
+  akar.innerHTML = `<div class="tengah"><div class="kartu"><h2>Gagal tersambung</h2><p>Periksa koneksi internet, lalu muat ulang halaman ini.</p><p class="kecil-abu" style="margin-top:10px;word-break:break-word">Rincian: ${esc(e?.code || '')} ${esc(e?.message || e)}</p></div></div>`;
 }
 
 if (UJI) window.__ia = { get pub() { return pub; }, get saya() { return saya; }, jawab };

@@ -4,6 +4,7 @@ import { STAGE, WARNA, esc, daftar, avatarHTML, hitungMundur, bunyi } from './um
 import { Dunia } from './dunia.js';
 
 const akar = document.getElementById('akar');
+const el = (id) => document.getElementById(id);
 const q = new URLSearchParams(location.search);
 const kode = (q.get('r') || '').toUpperCase();
 let toko, pub, peserta = {}, gerak = null, dunia = null, kunciLama = '', stopJam = null;
@@ -19,7 +20,6 @@ else {
   toko.pantau(`ruang/${kode}/gerak`, (v) => { gerak = v; aturDunia(); });
 }
 
-const el = (id) => document.getElementById(id);
 const urlMasuk = () => new URL(`index.html?r=${kode}${q.has('uji') ? '&uji' : ''}`, location.href).href;
 
 function qrSVG(teks) {
