@@ -1,9 +1,10 @@
 // Layar panggung (dibagikan di Zoom). Hanya membaca data.
 import { siapkan } from './toko.js';
-import { STAGE, WARNA, esc, daftar, avatarHTML, hitungMundur, bunyi } from './umum.js';
+import { STAGE, WARNA, esc, daftar, avatarHTML, hitungMundur, bunyi, pasangIkon } from './umum.js';
 import { Dunia } from './dunia.js';
 
 const akar = document.getElementById('akar');
+pasangIkon();
 const el = (id) => document.getElementById(id);
 const q = new URLSearchParams(location.search);
 const kode = (q.get('r') || '').toUpperCase();
@@ -34,7 +35,7 @@ function gambarAtas() {
   }
   const kanan = f === 'soal' ? `<span class="pil" id="terjawab">Sudah menjawab ${pub.terjawab || 0}/${pub.sisa ?? 0}</span><span class="jam-besar" id="jam">${pub.durasi}</span>`
     : f === 'lobi' ? '' : `<span class="pil">Tersisa ${pub.sisa ?? '–'} pemain</span>`;
-  el('atas').innerHTML = `<span class="merek">🏁 Integrity Adventure</span>${tengah}<span class="dorong"></span>${kanan}`;
+  el('atas').innerHTML = `<span class="merek"><b>INTEGRITY ADVENTURE</b><small>Biro SDMO · Komdigi</small></span>${tengah}<span class="dorong"></span>${kanan}`;
 }
 
 function gambar(paksa) {
@@ -65,10 +66,13 @@ function gambar(paksa) {
 function vLobi() {
   const semua = Object.values(peserta).sort((a, b) => (a.masukPada || 0) - (b.masukPada || 0));
   const url = urlMasuk();
-  return `<div class="p-lobi"><div class="kartu kiri"><h2>Pindai untuk bergabung</h2><div class="qr">${qrSVG(url)}</div>
-    <div class="kode">${esc(kode)}</div><div class="tautan">${esc(url)}</div>
-    <h2>${semua.length} pemain ${pub.terkunci ? '· pintu terkunci 🔒' : 'sudah masuk'}</h2></div>
-    <div class="dinding ${semua.length > 40 ? 'padat' : ''}">${semua.map((p) => `<div class="orang">${avatarHTML(p)}<span>${esc(p.nama)}</span></div>`).join('') || '<p style="font-size:4vh;font-weight:800">Menunggu pemain pertama…</p>'}</div></div>`;
+  return `<div class="p-lobi"><div class="kartu kiri"><span class="pita">Kuis 9 Nilai Integritas</span><h2>Pindai untuk bergabung!</h2>
+    <p class="sub">Pakai kamera HP, tanpa memasang aplikasi</p><div class="qr">${qrSVG(url)}</div>
+    <div class="kotak-kode"><small>KODE RUANG</small><div class="kode">${esc(kode)}</div></div><div class="tautan">${esc(url)}</div>
+    <div class="hitung">${semua.length} pemain ${pub.terkunci ? '· pintu terkunci 🔒' : 'sudah masuk'}</div></div>
+    <div class="dinding ${semua.length > 40 ? 'padat' : ''}">${semua.map((p) => `<div class="orang">${avatarHTML(p)}<span>${esc(p.nama)}</span></div>`).join('') || '<p class="kosong">Menunggu pemain pertama…</p>'}</div>
+    <div class="p-aturan"><div class="a1">❤️<span><small>MODAL AWAL</small>3 nyawa</span></div><div class="a2">⚠️<span><small>SALAH 1× DAN 2×</small>SP 1, lalu SP 2</span></div>
+    <div class="a3">🚔<span><small>SALAH 3×</small>Masuk penjara</span></div><div class="a4">🔥<span><small>5 BENAR BERUNTUN</small>+1 nyawa</span></div></div></div>`;
 }
 
 function vIntro() {
@@ -119,7 +123,7 @@ function vRekap() {
 
 function vPodium() {
   const pd = daftar(pub.podium); const tk = (i) => pd[i] ? `<div class="tk k${i + 1}">${i === 0 ? '<div class="mahkota">👑</div>' : ''}${avatarHTML(pd[i])}<span>${esc(pd[i].nama)}</span><div class="balok">${i + 1}</div></div>` : '';
-  return `<div style="height:100%;width:100%;display:grid;grid-template-rows:auto 1fr;text-align:center"><h1 style="font-size:7vh;text-shadow:0 .8vh 0 rgba(0,0,0,.25)">🏆 PEMENANG UTAMA</h1><div class="p-podium">${tk(1)}${tk(0)}${tk(2)}</div></div>`;
+  return `<div style="height:100%;width:100%;display:grid;grid-template-rows:auto 1fr;text-align:center"><h1 class="judul-podium">🏆 PEMENANG UTAMA</h1><div class="p-podium">${tk(1)}${tk(0)}${tk(2)}</div></div>`;
 }
 
 function vSulit() {

@@ -1,8 +1,9 @@
 // Halaman peserta (HP).
 import { siapkan, TS, UJI } from './toko.js';
-import { AVATAR, WARNA, HURUF, BENTUK, STAGE, LABEL_STATUS, esc, daftar, avatarHTML, hitungMundur, bunyi } from './umum.js';
+import { JUMLAH_AVATAR, WARNA, HURUF, BENTUK, STAGE, LABEL_STATUS, esc, daftar, avatarHTML, hitungMundur, bunyi, pasangIkon } from './umum.js';
 
 const akar = document.getElementById('akar');
+pasangIkon();
 const q = new URLSearchParams(location.search);
 let toko, uid, kode = (q.get('r') || localStorage.getItem('ia-kode') || '').toUpperCase();
 let pub, saya, lepas = [], kunciLama = '', stopJam = null, dikeluarkan = false, pernahAda = false;
@@ -59,17 +60,17 @@ const vTiada = () => `<h1 class="judul">Integrity Adventure</h1><div class="kart
 const vKeluar = () => `<div class="tengah"><div class="kartu"><h2>Kamu dikeluarkan dari ruang oleh pemandu.</h2></div></div>`;
 
 function vMasuk() {
-  return `<h1 class="judul">Integrity Adventure</h1>
+  return `<h1 class="judul">Integrity Adventure</h1><p class="sub-judul">Kuis 9 Nilai Integritas</p>
   <div class="kartu">
-    <p class="kecil-abu">Ruang <b>${esc(kode)}</b></p>
+    <div class="kepala-kartu"><h2>Registrasi Peserta</h2><span class="cip-ruang">Ruang ${esc(kode)}</span></div>
     <label class="lb" for="nama">Nama Panggilan</label>
     <input class="isian" id="nama" maxlength="14" autocomplete="off" placeholder="2–14 karakter" value="${esc(form.nama)}">
-    <label class="lb">Pilih Avatar</label>
-    <div class="kisi-av">${AVATAR.map((_, i) => `<button type="button" data-av="${i}" class="${i === form.avatar ? 'pilih' : ''}" aria-label="Avatar ${i + 1}">${avatarHTML({ avatar: i, warna: form.warna })}</button>`).join('')}</div>
-    <label class="lb">Warna</label>
+    <label class="lb">Pilih Karakter</label>
+    <div class="kisi-av">${Array.from({ length: JUMLAH_AVATAR }, (_, i) => `<button type="button" data-av="${i}" class="${i === form.avatar ? 'pilih' : ''}" aria-label="Karakter ${i + 1}" aria-pressed="${i === form.avatar}">${avatarHTML({ avatar: i, warna: form.warna })}</button>`).join('')}</div>
+    <label class="lb">Warna Karakter</label>
     <div class="baris-warna">${WARNA.map((w, i) => `<button type="button" data-w="${i}" class="${i === form.warna ? 'pilih' : ''}" aria-label="Warna ${i + 1}"><i style="--w:${w}"></i></button>`).join('')}</div>
     <p class="galat" id="galat">${esc(form.galat)}</p>
-    <button class="tb" id="masuk">MASUK</button>
+    <button class="tb" id="masuk">MASUK KE PERMAINAN</button>
     <p class="kecil-abu" style="text-align:center;margin-top:10px">Buka di satu tab saja ya.</p>
   </div>`;
 }
@@ -94,7 +95,8 @@ const penonton = () => !saya || saya.status === 'penjara';
 
 function tombolOpsi(soal, terpilih) {
   const pintu = soal.tipe === 'benar_salah';
-  return `<div class="opsi ${pintu ? 'pintu' : ''} ${terpilih ? 'kunci-sudah' : ''}">${daftar(soal.opsi).map((o, i) =>
+  const pendek = !pintu && daftar(soal.opsi).every((o) => o.length <= 16);
+  return `<div class="opsi ${pintu ? 'pintu' : ''} ${pendek ? 'kisi' : ''} ${terpilih ? 'kunci-sudah' : ''}">${daftar(soal.opsi).map((o, i) =>
     `<button data-p="${HURUF[i]}" style="--k:var(--${HURUF[i]})" class="${terpilih === HURUF[i] ? 'pilih' : ''}" ${terpilih ? 'disabled' : ''}>
       <span class="tanda">${pintu ? (i === 0 ? '✔' : '✖') : BENTUK[i]}</span><span>${esc(o)}</span></button>`).join('')}</div>`;
 }
@@ -108,7 +110,7 @@ function vSoal() {
     <p class="label-stage">${label}</p>
     <div class="jam" id="jam"><span>${pub.durasi}</span></div>
     <div class="kartu soal">${esc(s.pertanyaan)}</div>
-    <p class="terkirim" id="terkirim">${terpilih ? (penonton() ? 'Tebakan dicatat ✓' : 'Terkirim ✓ Menunggu waktu habis…') : ''}</p>
+    <p class="terkirim" id="terkirim">${terpilih ? (penonton() ? 'Tebakan dicatat ✓' : 'Terkirim ✓ Lihat karaktermu di layar!') : ''}</p>
     ${tombolOpsi(s, terpilih)}`;
 }
 
@@ -125,8 +127,10 @@ function vBuka() {
   else if (jenis === 'lambat') atas = `<p class="vonis salah">BENAR, TAPI…</p><div class="sel">${avatarHTML(saya, 'besar')}</div><p class="ket">Kamu termasuk yang paling lambat. Zona menyempit!</p>`;
   else if (jenis === 'ulang') atas = '<p class="vonis salah">SEMUA SALAH!</p><p class="ket">Tidak ada yang tersingkir. Ronde diulang.</p>';
   else atas = `<p class="vonis ${terpilih === b.kunci ? '' : 'salah'}">${!terpilih ? 'Jawabannya…' : terpilih === b.kunci ? 'Tebakanmu benar' : 'Tebakanmu salah'}</p>`;
-  return `${bilah()}<div class="tengah">${atas}
-    <div class="kunci-jwb"><b>Jawaban: ${esc(daftar(s.opsi)[iKunci])}</b><p>${esc(b.penjelasan)}</p></div></div>`;
+  const bagus = ['benar', 'bonus'].includes(jenis) || (!jenis && terpilih === b.kunci);
+  return `${bilah()}<div class="hero ${bagus ? '' : jenis === 'ulang' || !terpilih && !jenis ? 'netral' : 'salah'}">${atas}</div>
+    <div class="kunci-jwb"><small>KUNCI JAWABAN</small><b>${esc(daftar(s.opsi)[iKunci])}</b><p>${esc(b.penjelasan)}</p></div>
+    <p class="tunggu">Menunggu soal berikutnya<span class="titik3"></span></p>`;
 }
 
 function vRekap() {
@@ -154,7 +158,7 @@ function ikat(t) {
   if (t === 'tiada') akar.querySelector('#ganti').onclick = () => { kode = ''; localStorage.removeItem('ia-kode'); pasang(); };
   if (t === 'masuk') {
     const nama = akar.querySelector('#nama'); nama.oninput = () => { form.nama = nama.value; };
-    akar.querySelectorAll('[data-av]').forEach((b) => { b.onclick = () => { form.avatar = +b.dataset.av; akar.querySelectorAll('[data-av]').forEach((x) => x.classList.toggle('pilih', x === b)); }; });
+    akar.querySelectorAll('[data-av]').forEach((b) => { b.onclick = () => { form.avatar = +b.dataset.av; akar.querySelectorAll('[data-av]').forEach((x) => { x.classList.toggle('pilih', x === b); x.setAttribute('aria-pressed', x === b); }); }; });
     akar.querySelectorAll('[data-w]').forEach((b) => { b.onclick = () => {
       form.warna = +b.dataset.w; akar.querySelectorAll('[data-w]').forEach((x) => x.classList.toggle('pilih', x === b));
       akar.querySelectorAll('[data-av] .av').forEach((a) => a.style.setProperty('--w', WARNA[form.warna]));

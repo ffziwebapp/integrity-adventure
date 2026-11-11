@@ -1,6 +1,6 @@
 // Dunia game di layar panggung: tiap peserta punya karakter yang bergerak ke area pilihannya.
 // Kanvas logis 1600 x 900 yang diskalakan mengikuti ukuran jendela.
-import { AVATAR, WARNA, HURUF, BENTUK, STAGE, esc, daftar } from './umum.js';
+import { HURUF, BENTUK, STAGE, esc, daftar, karakterSVG, warnaKe } from './umum.js';
 
 const L = 1600, T = 900;
 const KULIT = { 1: 'jungkat', 2: 'kartu', 3: 'timbang', 4: 'gerbang', 5: 'pulau' };
@@ -69,7 +69,7 @@ export class Dunia {
     const kiri = p.stage === 5 ? `⚔️ Arena Terakhir · Ronde ${p.ronde}` : `Stage ${p.stage} · ${STAGE[p.stage].nama} · Soal ${p.nomor}/${p.jumlah}`;
     const kanan = buka ? `<span class="pil">Tersisa ${p.sisa ?? '–'} pemain</span>`
       : `<span class="pil" id="terjawab">Sudah menjawab ${p.terjawab || 0}/${p.sisa ?? 0}</span><span class="jam-besar" id="jam">${p.durasi}</span>`;
-    const html = `<span class="merek">🏁 Integrity Adventure</span><span class="pil">${kiri}</span><span class="dorong"></span>${kanan}`;
+    const html = `<span class="merek"><b>INTEGRITY ADVENTURE</b><small>Biro SDMO · Komdigi</small></span><span class="pil">${kiri}</span><span class="dorong"></span>${kanan}`;
     const a = this.q('.d-atas'); const k = `${this.idSoal}|${buka}`;
     if (a.dataset.k !== k) { a.dataset.k = k; a.innerHTML = html; }
     else if (!buka) { const t = a.querySelector('#terjawab'); if (t) t.textContent = `Sudah menjawab ${p.terjawab || 0}/${p.sisa ?? 0}`; }
@@ -142,8 +142,8 @@ export class Dunia {
       const d = this.peserta[u]; let o = this.orang.get(u);
       if (!o) {
         const el = document.createElement('div'); el.className = 'k';
-        el.innerHTML = `<div class="badan"><span class="muka">${AVATAR[(d.avatar || 0) % AVATAR.length]}</span><i class="kaki"></i></div><b class="cap"></b><span class="nm">${esc(d.nama)}</span>`;
-        el.style.setProperty('--w', WARNA[(d.warna || 0) % WARNA.length]);
+        el.innerHTML = `<div class="badan">${karakterSVG(d.avatar || 0)}</div><b class="cap"></b><span class="nm">${esc(d.nama)}</span>`;
+        el.style.setProperty('--w', warnaKe(d.warna));
         wadah.appendChild(el); o = { el, x: null, y: null }; this.orang.set(u, o);
       }
       const [x, y, zi] = tempat.get(u); const sel = zi === -2; const ukuran = sel ? 30 : S;

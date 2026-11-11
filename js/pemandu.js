@@ -1,9 +1,10 @@
 // Panel pemandu.
 import { siapkan, UJI } from './toko.js';
 import { Wasit } from './wasit.js';
-import { HURUF, STAGE, LABEL_STATUS, esc, daftar, avatarHTML, bacaCSV, susunBank } from './umum.js';
+import { HURUF, STAGE, LABEL_STATUS, esc, daftar, avatarHTML, bacaCSV, susunBank, pasangIkon } from './umum.js';
 
 const akar = document.getElementById('akar');
+pasangIkon();
 const q = new URLSearchParams(location.search);
 const akhiran = q.has('uji') ? '&uji' : '';
 let toko, wasit = null, pesan = '';
