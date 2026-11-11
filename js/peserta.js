@@ -15,7 +15,7 @@ try {
   pasang();
 } catch (e) {
   console.error(e);
-  akar.innerHTML = `<div class="tengah"><div class="kartu"><h2>Gagal tersambung</h2><p>Periksa koneksi internet, lalu muat ulang halaman ini.</p></div></div>`;
+  akar.innerHTML = `<div class="tengah"><div class="kartu"><h2>Gagal tersambung</h2><p>Periksa koneksi internet, lalu muat ulang halaman ini.</p><p class="kecil-abu" style="margin-top:10px;word-break:break-word">Rincian: ${esc(e?.code || '')} ${esc(e?.message || e)}</p></div></div>`;
 }
 
 function pasang() {
