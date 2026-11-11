@@ -149,7 +149,7 @@ function vAkhir() {
 function ikat(t) {
   if (t === 'kode') {
     const k = akar.querySelector('#k'); const kirim = () => { const v = k.value.trim().toUpperCase(); if (v.length < 4) { akar.querySelector('.galat').textContent = 'Kode belum lengkap.'; return; } kode = v; pasang(); };
-    akar.querySelector('#ok').onclick = kirim; k.onkeydown = (e) => e.key === 'Enter' && kirim();
+    akar.querySelector('#ok').onclick = kirim; k.onkeydown = (e) => { if (e.key === 'Enter') kirim(); };
   }
   if (t === 'tiada') akar.querySelector('#ganti').onclick = () => { kode = ''; localStorage.removeItem('ia-kode'); pasang(); };
   if (t === 'masuk') {

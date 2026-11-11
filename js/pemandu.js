@@ -34,7 +34,7 @@ function vMasuk(galat = '') {
     }
   };
   akar.querySelector('#ok').onclick = kirim;
-  akar.querySelector('#sd').onkeydown = (e) => e.key === 'Enter' && kirim();
+  akar.querySelector('#sd').onkeydown = (e) => { if (e.key === 'Enter') kirim(); };
 }
 
 async function bukaRuang() {
