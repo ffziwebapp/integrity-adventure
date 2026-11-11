@@ -1,0 +1,183 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Contoh tampilan semi-3D · Integrity Adventure</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@700;800&family=Nunito:wght@700;800;900&family=Fredoka:wght@600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --malam: #1d1458; --ungu: #7a3cff; --pink: #ff3d9a; --sian: #2ed3f5; --kuning: #ffd21a; --limau: #9be15d;
+  --a: #ff3d9a; --b: #2aa8ff; --c: #ffa51a; --d: #3fcf5e;
+  --judul: 'Baloo 2', 'Nunito', system-ui, sans-serif; --teks: 'Nunito', system-ui, sans-serif; --r: 28px;
+}
+* { box-sizing: border-box; }
+body { margin: 0; font-family: var(--teks); font-weight: 800; color: #fff; min-height: 100vh;
+  background: radial-gradient(120% 90% at 50% 0, #ff6cc4 0, #b94be8 34%, #6a35f0 66%, #2c1f9c 100%) fixed; }
+main { max-width: 1180px; margin: 0 auto; padding: 28px 18px 80px; display: grid; gap: 34px; }
+h1, h2 { font-family: var(--judul); font-weight: 800; margin: 0; line-height: 1.05; }
+h1 { font-size: clamp(34px, 6vw, 62px); text-shadow: 0 4px 0 #4a1fb0, 0 12px 22px rgba(20, 8, 70, .45); }
+h2 { font-size: 26px; text-shadow: 0 3px 0 rgba(40, 16, 120, .8); margin-bottom: 12px; }
+p.ket { margin: 6px 0 0; font-weight: 700; opacity: .92; max-width: 70ch; }
+
+/* --- Bahan dasar semi-3D: gradasi cahaya, kilap tepi atas, sisi bawah tebal, bayangan lantai --- */
+.balok { --k: var(--kuning); --gelap: color-mix(in srgb, var(--k) 62%, #1a0b40); border-radius: var(--r); position: relative;
+  background: linear-gradient(color-mix(in srgb, var(--k) 78%, #fff) 0, var(--k) 46%, color-mix(in srgb, var(--k) 86%, #000) 100%);
+  box-shadow: inset 0 3px 0 rgba(255, 255, 255, .55), inset 0 -8px 12px rgba(0, 0, 0, .12), 0 9px 0 var(--gelap), 0 20px 26px rgba(18, 6, 60, .38); }
+.tb { border: 0; cursor: pointer; font-family: var(--judul); font-weight: 800; font-size: 26px; letter-spacing: .01em; color: var(--malam); padding: 16px 34px 14px; transition: transform .1s, box-shadow .1s; }
+.tb:active { transform: translateY(6px); box-shadow: inset 0 3px 0 rgba(255, 255, 255, .55), 0 3px 0 var(--gelap), 0 8px 12px rgba(18, 6, 60, .38); }
+.tb.putih { --k: #fff; font-size: 18px; padding: 10px 22px 9px; } .tb.pink { --k: var(--pink); color: #fff; text-shadow: 0 2px 0 rgba(120, 0, 60, .5); }
+.pil { display: inline-flex; align-items: center; gap: 8px; --k: var(--sian); color: var(--malam); border-radius: 999px; padding: 7px 20px 6px; font-size: 18px;
+  box-shadow: inset 0 2px 0 rgba(255, 255, 255, .6), 0 5px 0 var(--gelap), 0 10px 14px rgba(18, 6, 60, .3); }
+.panel { border-radius: var(--r); overflow: hidden; background: linear-gradient(#3a2ba8, #1d1458); box-shadow: inset 0 2px 0 rgba(255, 255, 255, .22), 0 10px 0 #120b3d, 0 24px 34px rgba(12, 4, 50, .5); }
+.panel > header { background: linear-gradient(#63e6ff, #1fbfe6); color: var(--malam); font-family: var(--judul); font-size: 19px; padding: 8px 22px 6px; box-shadow: inset 0 2px 0 rgba(255, 255, 255, .6); }
+.panel > div { padding: 20px 26px 26px; font-family: var(--judul); font-size: clamp(20px, 2.6vw, 32px); line-height: 1.2; text-align: center; }
+
+/* Perbandingan font */
+.font3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 18px; }
+.font3 > div { background: rgba(255, 255, 255, .14); border-radius: var(--r); padding: 18px; box-shadow: inset 0 2px 0 rgba(255, 255, 255, .25); display: grid; gap: 10px; justify-items: start; }
+.font3 b.tag { background: #fff; color: var(--malam); border-radius: 999px; padding: 2px 14px; font-size: 14px; }
+.fA { --judul: 'Baloo 2'; --teks: 'Nunito'; } .fB { --judul: 'Nunito'; --teks: 'Nunito'; } .fB .besar { font-weight: 900; } .fC { --judul: 'Fredoka'; --teks: 'Nunito'; }
+.font3 .besar { font-family: var(--judul); font-weight: 800; font-size: 34px; line-height: 1; text-shadow: 0 3px 0 rgba(40, 16, 120, .8); }
+.font3 .menu { font-family: var(--teks); font-size: 17px; font-weight: 800; } .font3 .tb { font-size: 21px; padding: 12px 24px 10px; }
+
+/* --- Adegan panggung --- */
+.adegan { aspect-ratio: 16 / 9; border-radius: 26px; overflow: hidden; position: relative; box-shadow: 0 24px 40px rgba(12, 4, 50, .5);
+  background: linear-gradient(#49c6ff 0, #9fb6ff 30%, #ffc0ea 52%, #ffc0ea 100%); container-type: inline-size; }
+.adegan .bukit { position: absolute; left: -5%; right: -5%; bottom: 44%; height: 26%; background:
+  radial-gradient(22% 100% at 14% 100%, #ff8cc6 0 98%, transparent 100%), radial-gradient(26% 120% at 40% 100%, #ffb0d8 0 98%, transparent 100%),
+  radial-gradient(24% 105% at 68% 100%, #ff8cc6 0 98%, transparent 100%), radial-gradient(22% 90% at 92% 100%, #ffb0d8 0 98%, transparent 100%); }
+.adegan .lantai { position: absolute; left: -30%; right: -30%; bottom: -34%; height: 82%; transform: perspective(60cqw) rotateX(58deg); transform-origin: 50% 0;
+  background: repeating-linear-gradient(90deg, rgba(255, 255, 255, .16) 0 1.2cqw, transparent 1.2cqw 9cqw), repeating-linear-gradient(0deg, rgba(255, 255, 255, .16) 0 1.2cqw, transparent 1.2cqw 9cqw), linear-gradient(#b9ec6b, #58c043); }
+.adegan .atas { position: absolute; left: 2.5%; right: 2.5%; top: 2.5%; display: flex; gap: 1.2cqw; align-items: center; font-size: 1.5cqw; }
+.adegan .atas .pil { font-size: 1.5cqw; padding: .5cqw 1.5cqw .4cqw; } .adegan .atas .jam { margin-left: auto; --k: #fff; width: 5cqw; height: 5cqw; border-radius: 50%; display: grid; place-items: center; font-family: var(--judul); font-size: 2.8cqw; color: var(--malam); }
+.adegan .merek { --k: var(--pink); border-radius: 1.4cqw; padding: .5cqw 1.6cqw .3cqw; font-family: var(--judul); font-size: 1.9cqw; line-height: 1; color: #fff; text-shadow: 0 .2cqw 0 rgba(120, 0, 60, .5); }
+.adegan .merek small { display: block; font-family: var(--teks); font-size: .9cqw; letter-spacing: .08em; opacity: .95; }
+.adegan .panel { position: absolute; left: 2.5%; right: 2.5%; top: 11.5%; border-radius: 2.2cqw; }
+.adegan .panel > header { font-size: 1.4cqw; padding: .5cqw 2cqw .3cqw; } .adegan .panel > div { font-size: 3cqw; padding: 1.6cqw 3cqw 2.2cqw; }
+.pijakan { position: absolute; bottom: 9%; width: 21.5%; height: 31%; }
+.pijakan .plat { position: absolute; left: 0; right: 0; top: -19%; z-index: 3; --k: var(--w); border-radius: 1.6cqw; padding: .7cqw 1cqw .5cqw; display: flex; align-items: center; gap: .8cqw; font-family: var(--judul); font-size: 1.9cqw; color: #fff; text-shadow: 0 .15cqw 0 rgba(0, 0, 0, .25); }
+.pijakan .plat i { width: 2.8cqw; height: 2.8cqw; border-radius: 50%; background: #fff; color: var(--w); display: grid; place-items: center; font-style: normal; font-size: 1.4cqw; text-shadow: none; box-shadow: inset 0 -.2cqw 0 rgba(0, 0, 0, .12); }
+.pijakan .plat b { margin-left: auto; background: rgba(255, 255, 255, .92); color: var(--malam); border-radius: 999px; padding: 0 1cqw; text-shadow: none; font-size: 1.8cqw; }
+.pijakan .muka { position: absolute; inset: 22% 0 16% 0; border-radius: 2cqw; background: linear-gradient(color-mix(in srgb, var(--w) 72%, #fff), var(--w)); box-shadow: inset 0 .3cqw 0 rgba(255, 255, 255, .55); z-index: 1; }
+.pijakan .sisi { position: absolute; left: 0; right: 0; bottom: 0; top: 40%; border-radius: 2cqw; background: linear-gradient(color-mix(in srgb, var(--w) 70%, #000), color-mix(in srgb, var(--w) 52%, #000)); box-shadow: 0 2.2cqw 2.6cqw rgba(20, 60, 10, .45); }
+.pijakan .orang { position: absolute; left: 4%; right: 4%; bottom: 26%; z-index: 2; display: flex; justify-content: center; align-items: flex-end; flex-wrap: wrap-reverse; gap: 0; }
+.pijakan .orang .kr { width: 4.6cqw; margin: 0 -.5cqw -1.2cqw; }
+
+/* --- Karakter semi-3D (tanpa garis tepi) --- */
+.kr { display: inline-block; width: 90px; position: relative; filter: drop-shadow(0 .25em .2em rgba(20, 8, 60, .28)); }
+.kr svg { display: block; width: 100%; height: auto; overflow: visible; animation: napas 2.6s ease-in-out infinite; animation-delay: var(--d, 0s); transform-origin: 50% 100%; }
+.kr .mata { transform-box: fill-box; transform-origin: center; animation: kedip 4.4s infinite; animation-delay: var(--d, 0s); }
+.kr .tg { transform-box: view-box; } .kr .tgk { transform-origin: 54px 38px; } .kr.lambai .tgk { animation: lambai .45s ease-in-out infinite alternate; }
+.kr.senang svg { animation: lompat .42s cubic-bezier(.3, 1.5, .6, 1) infinite alternate; } .kr.senang .tg { transform: scaleY(-1); } .kr.senang .tgi { transform-origin: 6px 38px; } .kr.senang .tgk { animation: none; }
+.kr b { position: absolute; left: 50%; bottom: 17%; transform: translateX(-50%); background: #fff; color: var(--malam); font-size: .2em; border-radius: 999px; padding: 0 .5em; font-family: var(--teks); font-weight: 900; font-size: 13px; line-height: 1.35; }
+.pijakan .kr b { font-size: .95cqw; }
+@keyframes napas { 50% { transform: scaleY(1.035) scaleX(.985); } }
+@keyframes kedip { 0%, 93%, 100% { transform: scaleY(1); } 96% { transform: scaleY(.1); } }
+@keyframes lambai { from { transform: scaleY(-1) rotate(-14deg); } to { transform: scaleY(-1) rotate(20deg); } }
+@keyframes lompat { from { transform: translateY(0) scaleY(.95) scaleX(1.04); } to { transform: translateY(-22%) scaleY(1.06) scaleX(.97); } }
+
+/* --- Lobi: alas bertingkat --- */
+.alas { display: flex; gap: 34px; flex-wrap: wrap; justify-content: center; align-items: flex-end; padding: 10px 0 84px; }
+.alas > div { display: grid; justify-items: center; }
+.alas .kr { width: 120px; margin-bottom: -16px; z-index: 2; }
+.tatakan { width: 170px; height: 62px; border-radius: 50%; position: relative; background: radial-gradient(60% 60% at 50% 35%, #ff9bd0, #ff3d9a); box-shadow: inset 0 3px 0 rgba(255, 255, 255, .55), 0 16px 0 #b3166a, 0 34px 0 #2aa8ff, 0 44px 0 #1670c9, 0 66px 30px rgba(12, 4, 50, .5); }
+
+/* --- HP peserta --- */
+.dua { display: grid; grid-template-columns: minmax(0, 360px) 1fr; gap: 30px; align-items: start; } @media (max-width: 820px) { .dua { grid-template-columns: 1fr; } }
+.hp { border-radius: 40px; padding: 16px 14px 20px; display: grid; gap: 14px; background: radial-gradient(120% 70% at 50% 0, #ff6cc4, #8a3df0 55%, #3a25b8); box-shadow: 0 0 0 8px #150d44, 0 30px 44px rgba(12, 4, 50, .55); }
+.hp .bilah { --k: #fff; border-radius: 20px; padding: 8px 14px; display: flex; align-items: center; gap: 10px; color: var(--malam); font-size: 16px; } .hp .bilah .kr { width: 30px; } .hp .bilah span { margin-left: auto; color: #ff3d6e; letter-spacing: 2px; }
+.hp .jam { justify-self: center; --k: var(--kuning); width: 84px; height: 84px; border-radius: 50%; display: grid; place-items: center; font-family: var(--judul); font-size: 38px; color: var(--malam); }
+.hp .panel > div { font-size: 20px; padding: 16px 16px 20px; } .hp .panel > header { font-size: 14px; }
+.hp .kisi { display: grid; grid-template-columns: 1fr 1fr; gap: 14px 12px; padding-bottom: 8px; }
+.hp .kisi button { border: 0; --k: var(--w); border-radius: 22px; min-height: 96px; padding: 12px; display: grid; gap: 6px; align-content: space-between; justify-items: start; font-family: var(--judul); font-weight: 800; font-size: 20px; color: #fff; text-shadow: 0 2px 0 rgba(0, 0, 0, .22); text-align: left; cursor: pointer; }
+.hp .kisi button i { width: 32px; height: 32px; border-radius: 50%; background: #fff; color: var(--w); display: grid; place-items: center; font-style: normal; font-size: 15px; text-shadow: none; }
+.hp .kisi button:active { transform: translateY(6px); box-shadow: inset 0 3px 0 rgba(255, 255, 255, .55), 0 3px 0 var(--gelap); }
+.catatan { background: rgba(20, 10, 70, .45); border-radius: var(--r); padding: 18px 22px; font-weight: 700; line-height: 1.5; } .catatan li { margin: 4px 0; }
+</style>
+</head>
+<body>
+<main>
+  <div>
+    <h1>Contoh tampilan semi-3D</h1>
+    <p class="ket">Halaman ini hanya contoh untuk menilai arah tampilan. Game yang berjalan belum diubah. Tidak ada garis tepi gelap; kedalaman dibuat dari gradasi cahaya, kilap, sisi balok, dan bayangan lantai.</p>
+  </div>
+
+  <section>
+    <h2>1. Font (pilihan Anda: A)</h2>
+    <div class="font3">
+      <div class="fA"><b class="tag">A · Baloo 2 + Nunito</b><span class="besar">Timbangan Adil</span><span class="menu">Stage 3 · Soal 2 dari 5 · Sudah menjawab 41/52</span><button class="tb balok">MULAI PERMAINAN</button></div>
+      <div class="fB"><b class="tag">B · Nunito saja</b><span class="besar">Timbangan Adil</span><span class="menu">Stage 3 · Soal 2 dari 5 · Sudah menjawab 41/52</span><button class="tb balok">MULAI PERMAINAN</button></div>
+      <div class="fC"><b class="tag">C · Fredoka + Nunito</b><span class="besar">Timbangan Adil</span><span class="menu">Stage 3 · Soal 2 dari 5 · Sudah menjawab 41/52</span><button class="tb balok">MULAI PERMAINAN</button></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>2. Layar panggung (yang dibagikan di Zoom)</h2>
+    <div class="adegan">
+      <div class="bukit"></div><div class="lantai"></div>
+      <div class="atas"><span class="merek balok">INTEGRITY ADVENTURE<small>BIRO SDMO · KOMDIGI</small></span><span class="pil balok">Stage 2 · Tebak Nilai · Soal 3/5</span><span class="pil balok" style="margin-left:auto">Sudah menjawab 41/52</span><span class="jam balok" style="margin-left:0">9</span></div>
+      <div class="panel"><header>KASUS</header><div>Kasir kantin memberi kembalian lebih Rp50.000. Rina kembali ke kasir dan mengembalikannya.</div></div>
+      <div id="pijakan"></div>
+    </div>
+  </section>
+
+  <section class="dua">
+    <div>
+      <h2>3. HP peserta</h2>
+      <div class="hp">
+        <div class="bilah balok"><span class="kr" data-k="5,1" style="margin:0"></span>FIKRY<span>♥♥♥</span></div>
+        <div class="jam balok">12</div>
+        <div class="panel"><header>STAGE 2 · TEBAK NILAI · SOAL 3/5</header><div>Kasir kantin memberi kembalian lebih Rp50.000. Rina kembali ke kasir dan mengembalikannya.</div></div>
+        <div class="kisi">
+          <button class="balok" style="--w:var(--a)"><i>●</i>Mandiri</button><button class="balok" style="--w:var(--b)"><i>▲</i>Jujur</button>
+          <button class="balok" style="--w:var(--c)"><i>■</i>Kerja Keras</button><button class="balok" style="--w:var(--d)"><i>◆</i>Disiplin</button>
+        </div>
+      </div>
+    </div>
+    <div>
+      <h2>4. Lobi: karakter di atas alas</h2>
+      <div class="alas" id="alas"></div>
+      <h2 style="margin-top:34px">5. Tombol dan pil</h2>
+      <div style="display:flex;gap:16px;flex-wrap:wrap;align-items:center">
+        <button class="tb balok">MULAI PERMAINAN</button><button class="tb balok pink">LANJUT</button><button class="tb balok putih">Salin tautan ruang</button><span class="pil balok">Tersisa 12 pemain</span>
+      </div>
+      <ul class="catatan" style="margin-top:26px">
+        <li>Coba tekan tombol-tombolnya: tombol turun dan sisi bawahnya memendek.</li>
+        <li>Karakter berkedip, bernapas, melambai, dan melompat saat senang.</li>
+        <li>Semua bentuk dibuat dengan CSS dan SVG, jadi tetap ringan untuk 70 karakter.</li>
+      </ul>
+    </div>
+  </section>
+</main>
+<script>
+const WARNA = ['#ff3d9a', '#2aa8ff', '#ffa51a', '#3fcf5e', '#8b5cf6', '#ff7a1a', '#ff4d5e', '#14b8a6'];
+const T = '#1d1458';
+const MATA = ['<circle cx="22" cy="31" r="3.8"/><circle cx="38" cy="31" r="3.8"/>', '<path d="M17 32q5-7 10 0M33 32q5-7 10 0" fill="none" stroke="' + T + '" stroke-width="3.2" stroke-linecap="round"/>',
+  '<circle cx="22" cy="31" r="6.6" fill="#fff"/><circle cx="38" cy="31" r="6.6" fill="#fff"/><circle cx="23" cy="32" r="3.2"/><circle cx="37" cy="32" r="3.2"/>', '<circle cx="22" cy="31" r="3.8"/><path d="M33 32h10" fill="none" stroke="' + T + '" stroke-width="3.2" stroke-linecap="round"/>'];
+const MULUT = ['<path d="M23 42q7 7 14 0" fill="none" stroke="' + T + '" stroke-width="3.2" stroke-linecap="round"/>', '<path d="M20 40h20q-1 11-10 11T20 40z"/><path d="M24 41h12v3H24z" fill="#fff"/>'];
+function karakter(warna, wajah, nama, kelas) {
+  const w = WARNA[warna % 8];
+  return `<span class="kr ${kelas || ''}" style="--d:-${(Math.random() * 4).toFixed(2)}s"><svg viewBox="0 0 60 74">
+    <defs><radialGradient id="c${warna}" cx="34%" cy="24%" r="80%"><stop offset="0" stop-color="#fff" stop-opacity=".55"/><stop offset=".45" stop-color="#fff" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".3"/></radialGradient></defs>
+    <ellipse cx="30" cy="71" rx="20" ry="3.4" fill="#12063c" opacity=".28"/>
+    <g class="tg tgi" style="filter:brightness(.78)"><path d="M7 38q-10 5-9 16" fill="none" stroke="${w}" stroke-width="6.5" stroke-linecap="round"/></g>
+    <g class="tg tgk" style="filter:brightness(.78)"><path d="M53 38q10 5 9 16" fill="none" stroke="${w}" stroke-width="6.5" stroke-linecap="round"/></g>
+    <rect x="13" y="61" width="14" height="9" rx="4.5" fill="${w}" style="filter:brightness(.62)"/><rect x="33" y="61" width="14" height="9" rx="4.5" fill="${w}" style="filter:brightness(.62)"/>
+    <rect x="4" y="2" width="52" height="64" rx="26" fill="${w}"/><rect x="4" y="2" width="52" height="64" rx="26" fill="url(#c${warna})"/>
+    <ellipse cx="20" cy="14" rx="8" ry="4.2" fill="#fff" opacity=".7" transform="rotate(-24 20 14)"/>
+    <g class="mata" fill="${T}">${MATA[wajah % 4]}</g><g fill="${T}">${MULUT[kelas === 'senang' ? 1 : 0]}</g></svg>${nama ? `<b>${nama}</b>` : ''}</span>`;
+}
+document.querySelectorAll('.kr[data-k]').forEach((el) => { const [w, f] = el.dataset.k.split(',').map(Number); el.outerHTML = karakter(w, f, '', '').replace('class="kr "', 'class="kr" style="width:30px"'); });
+const OPSI = [['Mandiri', '●', 'a', 3], ['Jujur', '▲', 'b', 9], ['Kerja Keras', '■', 'c', 4], ['Disiplin', '◆', 'd', 0]];
+const NAMA = ['RINA', 'BUDI', 'TIA', 'DIMAS', 'ANI', 'SARI', 'FIKRY', 'DEWI', 'REZA', 'NUR', 'BAYU', 'PUTRI', 'DONI', 'SITI', 'AGUS', 'HANA'];
+let n = 0;
+document.getElementById('pijakan').innerHTML = OPSI.map(([t, tanda, k, jml], i) => `<div class="pijakan" style="left:${2.5 + i * 24.5}%;--w:var(--${k})">
+  <div class="sisi"></div><div class="muka"></div><div class="plat balok"><i>${tanda}</i>${t}${jml ? `<b>${jml}</b>` : ''}</div>
+  <div class="orang">${Array.from({ length: jml }, () => karakter(n * 3 + 1, n, NAMA[n++ % 16], '')).join('')}</div></div>`).join('');
+document.getElementById('alas').innerHTML = [[0, 1, 'RINA', 'lambai'], [1, 2, 'FIKRY', 'senang'], [3, 0, 'BUDI', 'lambai']].map(([w, f, nm, k]) => `<div>${karakter(w, f, nm, k)}<div class="tatakan"></div></div>`).join('');
+</script>
+</body>
+</html>
