@@ -18,8 +18,20 @@ function vMasuk(galat = '') {
     <label class="lb" for="sd">Kata Sandi</label><input class="isian" id="sd" type="password" autocomplete="current-password">
     <p class="galat">${esc(galat)}</p><button class="tb" id="ok">MASUK</button></div></div>`;
   const kirim = async () => {
-    try { await toko.masukPemandu(akar.querySelector('#em').value.trim(), akar.querySelector('#sd').value); await bukaRuang(); }
-    catch (e) { console.error(e); vMasuk('Email atau kata sandi salah.'); }
+    const tb = akar.querySelector('#ok'); const g = akar.querySelector('.galat');
+    const email = akar.querySelector('#em').value.trim(); const sandi = akar.querySelector('#sd').value;
+    if (!email || !sandi) { g.textContent = 'Isi email dan kata sandi akun pemandu.'; return; }
+    tb.disabled = true; g.textContent = '';
+    try { await toko.masukPemandu(email, sandi); await bukaRuang(); }
+    catch (e) {
+      console.error(e); tb.disabled = false;
+      const kode = e?.code || '';
+      g.textContent = kode === 'auth/invalid-email' ? 'Format email tidak sah.'
+        : kode === 'auth/too-many-requests' ? 'Terlalu banyak percobaan. Tunggu beberapa menit lalu coba lagi.'
+        : kode === 'auth/network-request-failed' ? 'Tidak bisa menghubungi server. Periksa koneksi internet.'
+        : 'Email atau kata sandi tidak cocok dengan akun pemandu di Firebase (Authentication → Users).';
+      akar.querySelector('#sd').select();
+    }
   };
   akar.querySelector('#ok').onclick = kirim;
   akar.querySelector('#sd').onkeydown = (e) => e.key === 'Enter' && kirim();
