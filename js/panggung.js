@@ -128,9 +128,8 @@ function cipHasil() {
     if (b.bonus) cip.push(`<span class="cip pink">❤️ ${b.bonus} dapat +1 nyawa</span>`);
     if (b.semuaTumbang) cip.push('<span class="cip kuning">Semua tumbang bersamaan! Langsung ke Arena Terakhir</span>');
   }
-  if (pub.mahkota) {
-    const m = pub.mahkota;
-    cip.push(`<span class="cip mahkota">👑 ${m.pindah ? 'Mahkota pindah ke ' : ''}${esc(m.nama)} · ${m.poin} poin</span>`);
+  if (pub.mahkota?.pindah) {
+    cip.push(`<span class="cip cip-mahkota">👑 Mahkota pindah ke ${esc(pub.mahkota.nama)}</span>`);
     if (!cip.length) cip.push('<span class="cip">Semua selamat 👏</span>');
   }
   if (b.tanpaJawab) cip.push(`<span class="cip">⏰ ${b.tanpaJawab} tidak menjawab</span>`);

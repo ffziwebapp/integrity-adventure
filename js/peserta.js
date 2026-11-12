@@ -124,7 +124,7 @@ function vBuka() {
   const jenis = saya?.kejadian?.id === s.id ? saya.kejadian.jenis : null;
   let atas;
   const aku = (ekspresi) => (saya ? avatarHTML(saya, mk() + 'besar ' + ekspresi) : '');
-  const poinBaru = saya?.poin ? `<p class="poin-baru">Poinmu: ${saya.poin}</p>${pub.mahkota?.uid === uid ? `<p class="poin-baru mahkota">👑 ${pub.mahkota.pindah ? 'Mahkota jadi milikmu!' : 'Kamu masih pemegang mahkota'}</p>` : ''}` : '';
+  const poinBaru = saya?.poin ? `<p class="poin-baru">Poinmu: ${saya.poin}</p>${pub.mahkota?.uid === uid && pub.mahkota.pindah ? '<span class="notif-mahkota">👑 Mahkota milikmu</span>' : ''}` : '';
   if (jenis === 'benar') atas = `<p class="vonis">BENAR! 🎉</p>${aku('e-senang lompat')}${poinBaru}`;
   else if (jenis === 'bonus') atas = `<p class="vonis">BENAR! 🎉</p>${aku('e-senang lompat')}<div class="bonus">❤️ +1 NYAWA · 5 BERUNTUN!</div>${poinBaru}`;
   else if (jenis === 'sp1') atas = `<p class="vonis salah">${terpilih ? 'SALAH' : 'WAKTU HABIS'}</p>${aku('e-kaget kejut')}<div class="surat">SP 1<small>Surat Peringatan Pertama</small></div>`;
