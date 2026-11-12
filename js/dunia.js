@@ -164,7 +164,7 @@ export class Dunia {
         : salahTempat ? 'e-sedih' : (zi === -1 && o.el.dataset.lambai ? 'lambai' : '');
       const tetap = ['jalan', 'kedip', 'ayun'].filter((c) => o.el.classList.contains(c)).join(' ');
       o.el.className = ['k', tetap, sel ? 'tahanan' : '', adaNama && !sel ? 'bernama' : '',
-        salahTempat ? 'ambles' : '', jenis === 'bonus' ? 'bonus' : '', ekspresi].join(' ');
+        salahTempat ? 'ambles' : '', jenis === 'bonus' ? 'bonus' : '', u === p.mahkota?.uid ? 'bermahkota' : '', ekspresi].join(' ');
       const cap = o.el.querySelector('.cap');
       const teks = sel || p.stage === 5 ? '' : d.status === 'sp1' ? 'SP 1' : d.status === 'sp2' ? 'SP 2' : '';
       if (cap.textContent !== teks) { cap.textContent = teks; cap.className = teks ? `cap ${d.status} baru` : 'cap'; }

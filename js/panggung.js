@@ -127,6 +127,10 @@ function cipHasil() {
     if (b.penjara) cip.push(`<span class="cip merah">🚔 ${b.penjara} masuk penjara</span>`);
     if (b.bonus) cip.push(`<span class="cip pink">❤️ ${b.bonus} dapat +1 nyawa</span>`);
     if (b.semuaTumbang) cip.push('<span class="cip kuning">Semua tumbang bersamaan! Langsung ke Arena Terakhir</span>');
+  }
+  if (pub.mahkota) {
+    const m = pub.mahkota;
+    cip.push(`<span class="cip mahkota">👑 ${m.pindah ? 'Mahkota pindah ke ' : ''}${esc(m.nama)} · ${m.poin} poin</span>`);
     if (!cip.length) cip.push('<span class="cip">Semua selamat 👏</span>');
   }
   if (b.tanpaJawab) cip.push(`<span class="cip">⏰ ${b.tanpaJawab} tidak menjawab</span>`);
@@ -148,13 +152,15 @@ function vRekap() {
     <div><b>${r.sp1 || 0}</b><span>SP 1</span><small>sisa 2 nyawa</small></div>
     <div><b>${r.sp2 || 0}</b><span>SP 2</span><small>sisa 1 nyawa</small></div>
     <div><b>${r.penjara || 0}</b><span>PENJARA</span><small>+${r.penjaraBaru || 0} di stage ini</small></div></div>
-    <p class="sub-rekap">Peringkat poin sementara (benar + kecepatan)</p><div class="p-top">${daftar(r.top).map((p, i) => `<div>${avatarHTML(p, 'e-senang')}<span>${i + 1}. ${esc(p.nama)}</span><span>${p.poin || 0} poin</span></div>`).join('')}</div></div>`;
+    <p class="sub-rekap">Peringkat poin sementara (benar + kecepatan)</p><div class="p-top">${daftar(r.top).map((p, i) => `<div>${avatarHTML(p, 'e-senang' + (i === 0 && p.poin > 0 ? ' bermahkota' : ''))}<span>${i + 1}. ${esc(p.nama)}</span><span>${p.poin || 0} poin</span></div>`).join('')}</div></div>`;
 }
 
 function vPodium() {
-  const pd = daftar(pub.podium); const tk = (i) => pd[i] ? `<div class="tk k${i + 1}">${i === 0 ? '<div class="mahkota">👑</div>' : ''}${avatarHTML(pd[i], 'e-senang lompat')}<span>${esc(pd[i].nama)}</span><div class="balok">${i + 1}<small>${pd[i].poin || 0} poin</small></div></div>` : '';
-  const pr = daftar(pub.peringkat);
-  return `<div style="height:100%;width:100%;display:grid;grid-template-rows:auto 1fr;text-align:center"><h1 class="judul-podium">🏆 PEMENANG UTAMA</h1><div class="p-podium">${tk(1)}${tk(0)}${tk(2)}${pr.length ? `<div class="papan-poin"><h3>Poin tertinggi</h3>${pr.map((x, i) => `<div><b>${i + 1}</b>${avatarHTML(x)}<span>${esc(x.nama)}</span><i>${x.poin}</i></div>`).join('')}</div>` : ''}</div></div>`;
+  const j = daftar(pub.podium)[0];
+  if (!j) return '<h1 class="judul-podium">Permainan selesai</h1>';
+  return `<div class="p-juara"><h1 class="judul-podium">🏆 JUARA 1</h1>
+    <div class="tk"><div class="mahkota">👑</div>${avatarHTML(j, 'e-senang')}<span class="nama-juara">${esc(j.nama)}</span>
+    <div class="balok">1<small>${j.benar || 0} benar · ${j.poin || 0} poin</small></div></div></div>`;
 }
 
 function vSulit() {
@@ -167,7 +173,7 @@ function gambarBawah() {
   const entri = Object.entries(peserta);
   const hidup = entri.filter(([, p]) => p.status !== 'penjara'); const sel = entri.filter(([, p]) => p.status === 'penjara');
   const idSoal = pub.soal?.id; const baruBuka = pub.fase === 'buka';
-  const av = ([uid, p], kelas) => `<span title="${esc(p.nama)}">${avatarHTML(p, kelas)}</span>`;
+  const av = ([uid, p], kelas) => `<span title="${esc(p.nama)}">${avatarHTML(p, kelas + (uid === pub.mahkota?.uid ? ' bermahkota' : ''))}</span>`;
   const htmlHidup = hidup.map((e) => av(e, baruBuka && e[1].kejadian?.id === idSoal && ['sp1', 'sp2'].includes(e[1].kejadian.jenis) ? 'kena' : '')).join('');
   const htmlSel = sel.map((e) => { const baru = !pertama && !dipenjara.has(e[0]); return av(e, (baru ? 'baru-jatuh ' : '') + 'e-tangis'); }).join('');
   sel.forEach(([u]) => dipenjara.add(u)); pertama = false;

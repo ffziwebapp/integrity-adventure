@@ -5,7 +5,7 @@ export const ATURAN = {
   nyawaAwal: 3,
   nyawaMaks: 5,
   syaratBeruntun: 5,
-  durasiArena: [12, 10, 9, 8], // detik; ronde ke-4 dst. tetap 8 (perlu waktu membaca soal)
+  durasiArena: [10, 9, 8, 7], // detik; ronde ke-4 dst. tetap 7 (soal arena paling panjang, perlu waktu membaca)
   porsiTersingkir: 1 / 3,     // arena: tiap ronde minimal sepertiga tersingkir
 };
 
@@ -143,6 +143,17 @@ export function podium(peserta) {
     .filter((p) => p.status !== 'juara')
     .sort((a, b) => (b.keluarPada ?? 1e9) - (a.keluarPada ?? 1e9) || (b.poin || 0) - (a.poin || 0) || a.waktu - b.waktu);
   return [...juara, ...lain].slice(0, 3);
+}
+
+/** Pemegang mahkota: peserta berpoin tertinggi saat ini (seri → total waktu menjawab tercepat).
+ *  Belum ada yang berpoin → tidak ada mahkota. */
+export function pemegangMahkota(peserta) {
+  let uid = null; let p = null;
+  for (const [u, x] of Object.entries(peserta || {})) {
+    if (!(x.poin > 0)) continue;
+    if (!p || x.poin > p.poin || (x.poin === p.poin && (x.waktu || 0) < (p.waktu || 0))) { uid = u; p = x; }
+  }
+  return p ? { uid, nama: p.nama, avatar: p.avatar, warna: p.warna, poin: p.poin } : null;
 }
 
 /** Papan peringkat poin (benar + kecepatan), untuk rekap dan layar akhir. */

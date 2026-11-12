@@ -1,5 +1,5 @@
 // Wasit: logika pemandu. Berjalan di laptop pemandu, menilai jawaban dan menggerakkan permainan.
-import { nilaiSoal, nilaiArena, uidAktif, rekapStatus, podium, durasiArena, peringkatPoin } from './aturan.js';
+import { nilaiSoal, nilaiArena, uidAktif, rekapStatus, podium, durasiArena, peringkatPoin, pemegangMahkota } from './aturan.js';
 import { TS } from './toko.js';
 import { STAGE, HURUF, acakUrut, daftar } from './umum.js';
 
@@ -133,7 +133,7 @@ export class Wasit {
       urutan['s' + s] = ids.slice(0, n); cadangan['s' + s] = ids.slice(n);
     }
     this.w = { urutan, cadangan, hitung: 0, posArena: 0, statistik: {}, langsungArena: false };
-    await this.toko.perbarui({ [`${this.P}/wasit`]: this.w, [`${this.P}/publik/terkunci`]: true });
+    await this.toko.perbarui({ [`${this.P}/wasit`]: this.w, [`${this.P}/publik/terkunci`]: true, [`${this.P}/publik/mahkota`]: null });
     await this.#intro(1);
   }
 
@@ -276,6 +276,8 @@ export class Wasit {
       };
       ubah[`${B}/sisa`] = uidAktif(r.peserta).length;
       ubah[`${B}/juaraUid`] = r.juara || null;
+      const mk = pemegangMahkota(r.peserta);
+      ubah[`${B}/mahkota`] = mk ? { ...mk, pindah: mk.uid !== (p.mahkota?.uid ?? null) } : null;
       ubah[`${this.P}/gerak`] = { id: q.id, pilihan: Object.fromEntries(Object.entries(jawaban).map(([u, j]) => [u, j.pilihan])) };
       ubah[`${this.P}/wasit`] = this.w;
       await this.toko.perbarui(ubah);
@@ -322,7 +324,9 @@ export class Wasit {
       this.w.hitung = Math.max(0, (this.w.hitung || 1) - 1);
       if (this.w.statistik) delete this.w.statistik[p.soal.id];
       this.w.langsungArena = false;
-      await this.toko.perbarui({ [`${this.P}/peserta`]: this.w.snapshot || this.peserta, [`${this.P}/publik/juaraUid`]: null });
+      const mk = pemegangMahkota(this.w.snapshot || this.peserta);
+      await this.toko.perbarui({ [`${this.P}/peserta`]: this.w.snapshot || this.peserta, [`${this.P}/publik/juaraUid`]: null,
+        [`${this.P}/publik/mahkota`]: mk ? { ...mk, pindah: false } : null });
       this.peserta = this.w.snapshot || this.peserta;
     }
     let id;

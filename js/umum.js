@@ -8,10 +8,10 @@ export const HURUF = ['a', 'b', 'c', 'd'];
 export const BENTUK = ['●', '▲', '■', '◆'];
 
 export const STAGE = {
-  1: { nama: 'Pintu Jujur', ket: 'Benar atau salah? Pilih pintunya.', durasi: 10, jumlah: 5 },
-  2: { nama: 'Tebak Nilai', ket: 'Baca kasusnya, tebak nilai integritasnya.', durasi: 15, jumlah: 5 },
-  3: { nama: 'Timbangan Adil', ket: 'Adil, tidak adil, atau sekadar sama rata?', durasi: 20, jumlah: 5 },
-  4: { nama: 'Lari Kilat', ket: 'Pilihan ganda. Makin sulit, makin cepat.', durasi: 12, jumlah: 4 },
+  1: { nama: 'Pintu Jujur', ket: 'Benar atau salah? Pilih pintunya.', durasi: 7, jumlah: 5 },
+  2: { nama: 'Tebak Nilai', ket: 'Baca kasusnya, tebak nilai integritasnya.', durasi: 10, jumlah: 5 },
+  3: { nama: 'Timbangan Adil', ket: 'Adil, tidak adil, atau sekadar sama rata?', durasi: 12, jumlah: 5 },
+  4: { nama: 'Lari Kilat', ket: 'Pilihan ganda. Makin sulit, makin cepat.', durasi: 9, jumlah: 4 },
   5: { nama: 'Arena Terakhir', ket: 'Semua sama rata. Satu kesalahan = penjara. Sampai tersisa satu.' },
 };
 

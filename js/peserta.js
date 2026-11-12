@@ -22,13 +22,16 @@ function pasang() {
   }));
 }
 
+/** Kelas mahkota bila peserta ini pemegang poin tertinggi. */
+const mk = () => (pub?.mahkota?.uid === uid ? 'bermahkota ' : '');
+
 function bilah() {
   if (!saya) return `<div class="bilah"><span class="nama">👀 Penonton</span><span class="runtun">Tersisa ${pub.sisa ?? '–'}</span></div>`;
   const arena = pub.stage === 5 && saya.status !== 'penjara' && pub.fase !== 'lobi';
   const hati = saya.status === 'penjara' ? '' : arena ? '⚔️' : '❤️'.repeat(Math.min(saya.nyawa, 5)) + '🤍'.repeat(Math.max(0, 3 - saya.nyawa));
   const lenc = arena ? '<span class="lencana juara">ARENA</span>' : `<span class="lencana ${saya.status}">${LABEL_STATUS[saya.status] || ''}</span>`;
   const runtun = arena || saya.status === 'penjara' ? `Tersisa ${pub.sisa ?? '–'}` : `🔥 ${saya.beruntun || 0}/5`;
-  return `<div class="bilah">${avatarHTML(saya, 'mini')}<span class="nama">${esc(saya.nama)}</span><span class="hati">${hati}</span>${lenc}<span class="runtun">${runtun}</span></div>`;
+  return `<div class="bilah">${avatarHTML(saya, mk() + 'mini')}<span class="nama">${esc(saya.nama)}</span><span class="hati">${hati}</span>${lenc}<span class="runtun">${runtun}</span></div>`;
 }
 
 function tampilan() {
@@ -77,7 +80,7 @@ function vMasuk() {
 }
 
 function vLobi() {
-  return `${bilah()}<div class="tengah"><div class="di-alas">${avatarHTML(saya, 'super lambai')}<div class="tatakan"></div></div>
+  return `${bilah()}<div class="tengah"><div class="di-alas">${avatarHTML(saya, mk() + 'super lambai')}<div class="tatakan"></div></div>
     <h1 class="judul">${esc(saya.nama)}</h1>
     <p class="ket">${pub.jumlahPemain || 1} pemain sudah masuk</p>
     <div class="kartu aturan"><span>❤️ Kamu punya 3 nyawa</span><span>📄 Salah 1× = SP 1, salah 2× = SP 2</span><span>🚔 Salah 3× = masuk penjara</span><span>🔥 5 benar beruntun = +1 nyawa</span><span>⚔️ Stage terakhir: satu salah langsung penjara</span></div>
@@ -120,8 +123,8 @@ function vBuka() {
   const iKunci = HURUF.indexOf(b.kunci);
   const jenis = saya?.kejadian?.id === s.id ? saya.kejadian.jenis : null;
   let atas;
-  const aku = (ekspresi) => (saya ? avatarHTML(saya, 'besar ' + ekspresi) : '');
-  const poinBaru = saya?.poin ? `<p class="poin-baru">Poinmu: ${saya.poin}</p>` : '';
+  const aku = (ekspresi) => (saya ? avatarHTML(saya, mk() + 'besar ' + ekspresi) : '');
+  const poinBaru = saya?.poin ? `<p class="poin-baru">Poinmu: ${saya.poin}</p>${pub.mahkota?.uid === uid ? `<p class="poin-baru mahkota">👑 ${pub.mahkota.pindah ? 'Mahkota jadi milikmu!' : 'Kamu masih pemegang mahkota'}</p>` : ''}` : '';
   if (jenis === 'benar') atas = `<p class="vonis">BENAR! 🎉</p>${aku('e-senang lompat')}${poinBaru}`;
   else if (jenis === 'bonus') atas = `<p class="vonis">BENAR! 🎉</p>${aku('e-senang lompat')}<div class="bonus">❤️ +1 NYAWA · 5 BERUNTUN!</div>${poinBaru}`;
   else if (jenis === 'sp1') atas = `<p class="vonis salah">${terpilih ? 'SALAH' : 'WAKTU HABIS'}</p>${aku('e-kaget kejut')}<div class="surat">SP 1<small>Surat Peringatan Pertama</small></div>`;
@@ -137,9 +140,9 @@ function vBuka() {
 }
 
 function vRekap() {
-  if (penonton()) return `${bilah()}<div class="tengah">${saya ? `<div class="sel">${avatarHTML(saya, 'besar e-tangis')}</div>` : ''}<p class="ket">Stage ${pub.stage} selesai. Tersisa ${pub.sisa} pemain.</p></div>`;
+  if (penonton()) return `${bilah()}<div class="tengah">${saya ? `<div class="sel">${avatarHTML(saya, mk() + 'besar e-tangis')}</div>` : ''}<p class="ket">Stage ${pub.stage} selesai. Tersisa ${pub.sisa} pemain.</p></div>`;
   const lanjut = pub.stage >= 4 ? 'ARENA TERAKHIR' : `Stage ${pub.stage + 1}`;
-  return `${bilah()}<div class="tengah"><p class="vonis">LANJUT! 🏃</p>${avatarHTML(saya, 'super e-senang lompat')}
+  return `${bilah()}<div class="tengah"><p class="vonis">LANJUT! 🏃</p>${avatarHTML(saya, mk() + 'super e-senang lompat')}
     <p class="ket">Kamu maju ke ${lanjut}</p>
     <div class="kartu aturan"><span>Status: ${LABEL_STATUS[saya.status]}</span><span>Nyawa: ${saya.nyawa}</span><span>Benar: ${saya.benar} · Poin: ${saya.poin || 0}</span></div></div>`;
 }
@@ -147,8 +150,8 @@ function vRekap() {
 function vAkhir() {
   const juara = saya?.status === 'juara';
   const pd = daftar(pub.podium);
-  return `${bilah()}<div class="tengah">${juara ? `<div style="font-size:70px">👑</div><div class="di-alas">${avatarHTML(saya, 'super e-senang')}<div class="tatakan"></div></div><p class="vonis">KAMU JUARANYA!</p>`
-    : `<p class="vonis">Selesai!</p><p class="ket">Pemenang utama:</p>${pd[0] ? `${avatarHTML(pd[0], 'besar')}<h1 class="judul">${esc(pd[0].nama)}</h1>` : ''}`}
+  return `${bilah()}<div class="tengah">${juara ? `<div class="di-alas">${avatarHTML(saya, 'bermahkota super e-senang')}<div class="tatakan"></div></div><p class="vonis">KAMU JUARANYA!</p>`
+    : `<p class="vonis">Selesai!</p><p class="ket">Juara 1:</p>${pd[0] ? `${avatarHTML(pd[0], 'besar')}<h1 class="judul">${esc(pd[0].nama)}</h1>` : ''}`}
     ${saya ? `<div class="kartu aturan"><span>Jawaban benar: ${saya.benar} · Poin: ${saya.poin || 0}</span></div>` : ''}
     <p class="ket">Terima kasih sudah ikut bermain 🙌</p></div>`;
 }
