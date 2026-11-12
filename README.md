@@ -18,3 +18,6 @@ yang menyimpan data di peramban itu saja.
 
 Tampilan memakai huruf Baloo 2 dan Nunito yang disimpan di folder `fonts/` (lisensi SIL OFL),
 jadi halaman tidak bergantung pada Google Fonts.
+
+Musik latar ada di `musik/latar.mp3` (dari berkas "337. Game", dikompres ke 128 kbps). Di Arena Terakhir
+temponya dipercepat 1,25× tanpa mengubah nada. Bila berkas gagal dimuat, panggung memakai musik sintetis cadangan.

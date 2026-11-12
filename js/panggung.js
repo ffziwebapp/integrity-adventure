@@ -8,6 +8,7 @@ import { Dunia } from './dunia.js';
 const akar = document.getElementById('akar');
 pasangIkon();
 hidupkanKarakter();
+Musik.siapkan();
 const el = (id) => document.getElementById(id);
 const q = new URLSearchParams(location.search);
 const kode = (q.get('r') || '').toUpperCase();
@@ -76,7 +77,7 @@ function gambar(paksa) {
   if (stopJam) { stopJam(); stopJam = null; }
   gambarAtas(); gambarDok();
   const u = el('utama'); const f = pub.fase;
-  Musik.tempo(pub.stage === 5 && ['intro', 'soal', 'buka'].includes(f) ? 136 : 112);
+  Musik.tempo(pub.stage === 5 && ['intro', 'soal', 'buka'].includes(f) ? 140 : 112);
   el('bawah').style.display = ['lobi', 'podium', 'tersulit', 'selesai'].includes(f) ? 'none' : '';
   el('konfeti').innerHTML = '';
   if (f === 'lobi') u.innerHTML = vLobi();

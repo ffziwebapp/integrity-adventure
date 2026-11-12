@@ -218,9 +218,9 @@ export function bunyi(jenis) {
   } catch { /* suara tidak wajib */ }
 }
 
-// ---------- Musik latar (dibangkitkan langsung, tanpa berkas suara) ----------
+// ---------- Musik latar cadangan (dibangkitkan langsung; dipakai bila berkas musik gagal dimuat) ----------
 // Lagu pendek buatan sendiri: empat akor berulang, bas, iringan, dan melodi.
-export const Musik = (() => {
+const MusikSintetis = (() => {
   const AKOR = [[261.63, 329.63, 392.0], [220.0, 261.63, 329.63], [174.61, 220.0, 261.63], [196.0, 246.94, 293.66]]; // C Am F G
   const MELODI = [0, 2, 1, 2, 0, 1, 2, 1, 2, 1, 0, 1, 2, 2, 1, 0]; // indeks nada akor per ketukan seperdelapan
   let ctx = null, keluaran = null, tm = null, langkah = 0, kapan = 0, tempo = 112, hidup = false;
@@ -256,5 +256,49 @@ export const Musik = (() => {
     alih() { if (hidup) this.berhenti(); else this.mulai(); return hidup; },
     tempo(bpm) { tempo = bpm; },
     volume(v) { if (keluaran) keluaran.gain.value = v; },
+  };
+})();
+
+// ---------- Musik latar ----------
+// Berkas musik/latar.mp3 diputar berulang. Di Arena Terakhir temponya dinaikkan lewat playbackRate
+// dengan nada tetap (preservesPitch), dan perubahannya digeser halus agar tidak terdengar melompat.
+export const Musik = (() => {
+  const TEMPO_DASAR = 112;
+  const SUMBER = new URL('../musik/latar.mp3', import.meta.url).href;
+  let el = null, hidup = false, laju = 1, target = 1, tm = null, vol = 0.55, cadangan = false;
+  const keCadangan = () => { cadangan = true; el?.pause(); if (hidup) MusikSintetis.mulai(); };
+  const siapkan = () => {
+    if (el) return el;
+    el = new Audio(); el.src = SUMBER; el.loop = true; el.preload = 'auto'; el.volume = vol;
+    el.preservesPitch = true; el.mozPreservesPitch = true; el.webkitPreservesPitch = true;
+    el.addEventListener('error', keCadangan);
+    return el;
+  };
+  const geser = () => {
+    clearInterval(tm);
+    tm = setInterval(() => {
+      const d = target - laju;
+      if (Math.abs(d) <= 0.02) { laju = target; clearInterval(tm); } else laju += Math.sign(d) * 0.02;
+      if (el) el.playbackRate = laju;
+    }, 50);
+  };
+  return {
+    get hidup() { return hidup; },
+    /** Mulai memuat berkas lebih awal (dipanggil panggung saat lobi) supaya musik langsung terdengar. */
+    siapkan() { try { siapkan(); } catch { cadangan = true; } },
+    mulai() {
+      if (hidup) return; hidup = true;
+      if (cadangan) { MusikSintetis.mulai(); return; }
+      const a = siapkan(); a.playbackRate = laju;
+      a.play().catch((e) => { if (e?.name === 'NotAllowedError') hidup = false; else keCadangan(); });
+    },
+    berhenti() { hidup = false; el?.pause(); MusikSintetis.berhenti(); },
+    alih() { if (hidup) this.berhenti(); else this.mulai(); return hidup; },
+    tempo(bpm) {
+      MusikSintetis.tempo(bpm);
+      target = Math.max(0.8, Math.min(1.4, bpm / TEMPO_DASAR));
+      if (target !== laju) geser();
+    },
+    volume(v) { vol = v; if (el) el.volume = v; MusikSintetis.volume(v); },
   };
 })();
