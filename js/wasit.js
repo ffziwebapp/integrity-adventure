@@ -248,8 +248,8 @@ export class Wasit {
       }
       const main = this.aktif; const arena = p.stage === 5;
       this.w.hitung = (this.w.hitung || 0) + 1;
-      const r = arena ? nilaiArena(this.peserta, jawaban, q.kunci, p.ronde, this.w.hitung, p.durasi * 1000)
-        : nilaiSoal(this.peserta, jawaban, q.kunci, p.stage, this.w.hitung, p.durasi * 1000);
+      const r = arena ? nilaiArena(this.peserta, jawaban, q.kunci, p.ronde, this.w.hitung, p.durasi * 1000, q.id)
+        : nilaiSoal(this.peserta, jawaban, q.kunci, p.stage, this.w.hitung, p.durasi * 1000, q.id);
 
       const sebaran = q.opsi.map((_, i) => main.filter((u) => jawaban[u]?.pilihan === HURUF[i]).length);
       const salah = main.filter((u) => jawaban[u]?.pilihan !== q.kunci).length;

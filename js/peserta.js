@@ -83,7 +83,7 @@ function vLobi() {
   return `${bilah()}<div class="tengah"><div class="di-alas">${avatarHTML(saya, mk() + 'super lambai')}<div class="tatakan"></div></div>
     <h1 class="judul">${esc(saya.nama)}</h1>
     <p class="ket">${pub.jumlahPemain || 1} pemain sudah masuk</p>
-    <div class="kartu aturan"><span>❤️ Kamu punya 3 nyawa</span><span>📄 Salah 1× = SP 1, salah 2× = SP 2</span><span>🚔 Salah 3× = masuk penjara</span><span>🔥 5 benar beruntun = +1 nyawa</span><span>⚔️ Stage terakhir: satu salah langsung penjara</span></div>
+    <div class="kartu aturan"><span>❤️ Kamu punya 3 nyawa</span><span>📄 Salah 1× = SP 1, salah 2× = SP 2</span><span>🚔 Salah 3× = masuk penjara</span><span>🔥 5 benar beruntun = +1 nyawa</span><span>⚔️ Stage terakhir: satu salah langsung penjara</span><span>👑 Juara = yang bertahan sampai akhir. Gugur = poin dipotong (makin awal, makin besar)</span></div>
     <p class="ket">Menunggu pemandu memulai<span class="titik3"></span></p></div>`;
 }
 
@@ -133,6 +133,10 @@ function vBuka() {
   else if (jenis === 'lambat') atas = `<p class="vonis salah">BENAR, TAPI…</p><div class="sel">${aku('e-tangis')}</div><p class="ket">Kamu termasuk yang paling lambat. Zona menyempit!</p>`;
   else if (jenis === 'ulang') atas = `<p class="vonis salah">SEMUA SALAH!</p>${aku('e-kaget')}<p class="ket">Tidak ada yang tersingkir. Ronde diulang.</p>`;
   else atas = `<p class="vonis ${terpilih === b.kunci ? '' : 'salah'}">${!terpilih ? 'Jawabannya…' : terpilih === b.kunci ? 'Tebakanmu benar' : 'Tebakanmu salah'}</p>`;
+  const pt = saya?.potong;
+  if ((jenis === 'penjara' || jenis === 'lambat') && pt?.id === s.id && pt.dari > 0) {
+    atas += `<p class="poin-baru potong">Poin dipotong ${pt.persen}% karena gugur di ${pt.stage === 5 ? 'Arena' : 'Stage ' + pt.stage}: ${pt.dari} → ${pt.jadi}</p>`;
+  }
   const bagus = ['benar', 'bonus'].includes(jenis) || (!jenis && terpilih === b.kunci);
   return `${bilah()}<div class="hero ${bagus ? '' : jenis === 'ulang' || !terpilih && !jenis ? 'netral' : 'salah'}">${atas}</div>
     <div class="kunci-jwb"><small>KUNCI JAWABAN</small><b>${esc(daftar(s.opsi)[iKunci])}</b><p>${esc(b.penjelasan)}</p></div>

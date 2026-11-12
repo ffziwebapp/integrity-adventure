@@ -7,7 +7,17 @@ export const ATURAN = {
   syaratBeruntun: 5,
   durasiArena: [10, 9, 8, 7], // detik; ronde ke-4 dst. tetap 7 (soal arena paling panjang, perlu waktu membaca)
   porsiTersingkir: 1 / 3,     // arena: tiap ronde minimal sepertiga tersingkir
+  // Poin dipotong saat gugur (masuk penjara): makin awal gugur, makin besar potongannya.
+  // Pemenang tetap yang bertahan sampai akhir; potongan ini menjaga poin agar sejalan dengan itu.
+  potongGugur: { 1: 0.5, 2: 0.4, 3: 0.3, 4: 0.2, 5: 0.1 },
 };
+
+/** Memotong poin peserta yang baru gugur; mencatat rinciannya untuk ditampilkan di HP. */
+function potongPoin(p, stage, idSoal) {
+  const persen = ATURAN.potongGugur[stage] || 0;
+  const dari = p.poin || 0; const jadi = Math.round(dari * (1 - persen));
+  p.poin = jadi; p.potong = { id: idSoal ?? null, stage, persen: Math.round(persen * 100), dari, jadi };
+}
 
 export function buatPeserta(nama, avatar) {
   return {
@@ -41,7 +51,7 @@ export const uidAktif = (peserta) => Object.keys(peserta).filter((u) => masihMai
  */
 export const poinJawaban = (ms, durasiMs) => 100 + Math.round(100 * Math.max(0, Math.min(1, 1 - ms / durasiMs)));
 
-export function nilaiSoal(peserta, jawaban, kunci, stage, hitung = 0, durasiMs = 10000) {
+export function nilaiSoal(peserta, jawaban, kunci, stage, hitung = 0, durasiMs = 10000, idSoal = null) {
   const baru = structuredClone(peserta);
   const kejadian = {};
   const main = uidAktif(baru);
@@ -62,7 +72,7 @@ export function nilaiSoal(peserta, jawaban, kunci, stage, hitung = 0, durasiMs =
     } else {
       p.nyawa -= 1;
       p.beruntun = 0;
-      if (p.nyawa <= 0) { p.nyawa = 0; p.stagePenjara = stage; p.keluarPada = hitung; }
+      if (p.nyawa <= 0) { p.nyawa = 0; p.stagePenjara = stage; p.keluarPada = hitung; potongPoin(p, stage, idSoal); }
     }
     p.status = statusDariNyawa(p.nyawa);
     if (kejadian[uid] === undefined) kejadian[uid] = p.status; // sp1 | sp2 | penjara
@@ -74,6 +84,7 @@ export function nilaiSoal(peserta, jawaban, kunci, stage, hitung = 0, durasiMs =
     semuaTumbang = true;
     for (const uid of main) {
       baru[uid].nyawa = 1; baru[uid].status = 'sp2'; baru[uid].stagePenjara = null; baru[uid].keluarPada = null;
+      if (baru[uid].potong?.id === idSoal && baru[uid].potong) { baru[uid].poin = baru[uid].potong.dari; delete baru[uid].potong; } // batal gugur → poin utuh
       kejadian[uid] = 'sp2';
     }
   }
@@ -104,7 +115,7 @@ export const durasiArena = (ronde) =>
  * Menilai satu ronde Arena Terakhir (Stage 5). Semua masuk sama rata; salah = penjara.
  * Hasil: { peserta, keluar: [uid… urut dari peringkat terbaik], ulang, juara }
  */
-export function nilaiArena(peserta, jawaban, kunci, ronde, hitung = ronde, durasiMs = 10000) {
+export function nilaiArena(peserta, jawaban, kunci, ronde, hitung = ronde, durasiMs = 10000, idSoal = null) {
   const baru = structuredClone(peserta);
   const main = uidAktif(baru);
   const benar = main.filter((u) => jawaban[u] && jawaban[u].pilihan === kunci);
@@ -125,7 +136,7 @@ export function nilaiArena(peserta, jawaban, kunci, ronde, hitung = ronde, duras
   for (const uid of benar) { baru[uid].benar += 1; baru[uid].waktu += ms(uid); baru[uid].poin = (baru[uid].poin || 0) + poinJawaban(ms(uid), durasiMs); }
   keluar.forEach((uid, i) => {
     const p = baru[uid];
-    p.nyawa = 0; p.status = 'penjara'; p.stagePenjara = 5;
+    p.nyawa = 0; p.status = 'penjara'; p.stagePenjara = 5; potongPoin(p, 5, idSoal);
     p.keluarPada = hitung + (keluar.length - i) / (keluar.length + 1); // peringkat lebih baik = nilai lebih besar
   });
 
@@ -135,7 +146,7 @@ export function nilaiArena(peserta, jawaban, kunci, ronde, hitung = ronde, duras
   return { peserta: baru, keluar, lambat, ulang: false, juara };
 }
 
-/** Podium: juara, lalu yang keluar paling akhir (seri: benar terbanyak, lalu tercepat). */
+/** Peringkat akhir: juara (bertahan sampai akhir), lalu yang gugur paling akhir; gugur bersamaan → poin, lalu tercepat. */
 export function podium(peserta) {
   const semua = Object.entries(peserta).map(([uid, p]) => ({ uid, ...p }));
   const juara = semua.filter((p) => p.status === 'juara');
@@ -145,12 +156,13 @@ export function podium(peserta) {
   return [...juara, ...lain].slice(0, 3);
 }
 
-/** Pemegang mahkota: peserta berpoin tertinggi saat ini (seri → total waktu menjawab tercepat).
+/** Pemegang mahkota: peserta berpoin tertinggi yang MASIH BERTAHAN (seri → total waktu menjawab tercepat).
+ *  Yang sudah di penjara tidak bisa memegang mahkota, jadi di akhir permainan mahkota selalu milik juara.
  *  Belum ada yang berpoin → tidak ada mahkota. */
 export function pemegangMahkota(peserta) {
   let uid = null; let p = null;
   for (const [u, x] of Object.entries(peserta || {})) {
-    if (!(x.poin > 0)) continue;
+    if (!(x.poin > 0) || x.status === 'penjara') continue;
     if (!p || x.poin > p.poin || (x.poin === p.poin && (x.waktu || 0) < (p.waktu || 0))) { uid = u; p = x; }
   }
   return p ? { uid, nama: p.nama, avatar: p.avatar, warna: p.warna, poin: p.poin } : null;
